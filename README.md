@@ -19,19 +19,23 @@ Secondlife using the external editor feature see Debug Setting `ExternalEditor`
 
 This extension contributes the following settings:
 
-- `sl-ext.enabled`: Recomend this is set at a workspace level rather than system
-  wide
-- `sl-ext.dir.projects`: _**UNUSED**_ Will be used to open vscode automatically
-  to the right director inside of this specified one, if it can match a file.
-- `sl-ext.hints.prefix`: The prefix to use to provide hints to the extension
-- `sl-ext.watcher.tempFilesRequireDirectoryPrefix`: Sets wether scripts need to
-  be named with their folder name aswell (this can be disabled, but is
-  reconmended to avoid false matches) e.g. `<folder_name>/<file_name>` as the
-  name of your script in sl.
-- `sl-ext.watcher.fileExtensions`: List of file extensions to care about.
-  (Defaults to `lua, luau, lsl`)
-- `sl-ext.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_ This is to come
-- `sl-ext.preprocessor.command`: _**NOT IMPLMENETED**_ This is to come
+- `secondlifeExternalEditor.enabled`: Recomend this is set at a workspace level
+  rather than system wide
+- `secondlifeExternalEditor.dir.projects`: _**UNUSED**_ Will be used to open
+  vscode automatically to the right director inside of this specified one, if it
+  can match a file.
+- `secondlifeExternalEditor.hints.prefix`: The prefix to use to provide hints to
+  the extension
+- `secondlifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix`: Sets
+  wether scripts need to be named with their folder name aswell (this can be
+  disabled, but is reconmended to avoid false matches) e.g.
+  `<folder_name>/<file_name>` as the name of your script in sl.
+- `secondlifeExternalEditor.watcher.fileExtensions`: List of file extensions to
+  care about. (Defaults to `lua, luau, lsl`)
+- `secondlifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
+  This is to come
+- `secondlifeExternalEditor.preprocessor.command`: _**NOT IMPLMENETED**_ This is
+  to come
 
 ## Planned Features
 

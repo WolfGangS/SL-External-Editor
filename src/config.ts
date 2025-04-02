@@ -2,21 +2,24 @@ import * as vscode from "vscode";
 import { OutputHandle } from "./output";
 
 export enum Config {
-    Enabled = "sl-ext.enabled",
-    DirProjects = "sl-ext.dir.projects",
-    HintsPrefix = "sl-ext.hints.prefix",
+    Enabled = "secondlifeExternalEditor.enabled",
+    DirProjects = "secondlifeExternalEditor.dir.projects",
+    HintsPrefix = "secondlifeExternalEditor.hints.prefix",
     WatcherFilesRequireDirectoryPrefix =
-        "sl-ext.watcher.tempFilesRequireDirectoryPrefix",
-    WatcherFileExtensions = "sl-ext.watcher.fileExtensions",
-    PreProcWatchIncludes = "sl-ext.preprocessor.watchIncludes",
-    PreProcCommand = "sl-ext.preprocessor.command",
+        "secondlifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix",
+    WatcherFileExtensions = "secondlifeExternalEditor.watcher.fileExtensions",
+    PreProcWatchIncludes =
+        "secondlifeExternalEditor.preprocessor.watchIncludes",
+    PreProcCommand = "secondlifeExternalEditor.preprocessor.command",
 }
 
 export function getConfig<T>(config: Config): T | null {
     const parts = config.split(".");
     parts.shift();
     const str = parts.join(".");
-    return vscode.workspace.getConfiguration("sl-ext").get<T>(str) ?? null;
+    return vscode.workspace.getConfiguration("secondlifeExternalEditor").get<T>(
+        str,
+    ) ?? null;
 }
 
 export class ConfigWatcher implements vscode.Disposable {
@@ -73,12 +76,14 @@ export class ConfigWatcher implements vscode.Disposable {
     }
 
     private onChange(event: vscode.ConfigurationChangeEvent) {
-        for (const key in this.hooks) {
+        for (const entry of Object.entries(this.hooks)) {
+            const key = entry[0];
+            const hooks = entry[1];
             if (event.affectsConfiguration(key)) {
                 this.output.appendLine(`Config change '${key}'`);
-                // for (const hook in this.hooks[key]) {
-                //     this.hooks[key][hook]();
-                // }
+                for (const hook in hooks) {
+                    hooks[hook]();
+                }
             }
         }
     }

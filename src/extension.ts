@@ -12,6 +12,11 @@ export function activate(context: vscode.ExtensionContext) {
 		"sl-external-editor.enable",
 		() => {
 			mainOutput?.appendLine("Enable command");
+			vscode.window.showInformationMessage(
+				"SL External Editor Enabled for workspace",
+			);
+			vscode.workspace.getConfiguration("secondlifeExternalEditor")
+				.update("enabled", true);
 		},
 	);
 
@@ -65,14 +70,15 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	});
+
+	mainOutput.appendLine("Activate");
+	ConfigWatcher.Get()
+		.hook(Config.Enabled, "enabledSetup", () => setup())
+		.start();
 	setup();
 }
 
 function setup() {
-	mainOutput?.appendLine("Activate");
-	ConfigWatcher.Get()
-		.hook(Config.Enabled, "enabeldSetup", () => setup())
-		.start();
 	const enabled = getConfig<boolean>(Config.Enabled) || false;
 	mainOutput?.appendLine("Enabled: " + (enabled ? "Yes" : "No"));
 	TempWatcher.Get().setRunning(enabled);
