@@ -1,0 +1,101 @@
+{
+  "name": "sl-external-editor",
+  "displayName": "SL-External-Editor",
+  "description": "Integrate vs code with the secondlife clients external editor feature",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WolfGangS/SL-External-Editor.git"
+  },
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sl-external-editor.enable",
+        "title": "Enable SL External Editor for directory"
+      }
+    ],
+    "configuration": {
+      "title": "SL External Editor",
+      "properties": {
+        "sl-ext.enabled": {
+          "description": "Wether the extension should be enabled.\nReconmend setting this in workspace rather than globally",
+          "type": "boolean",
+          "default": false,
+          "score": "window"
+        },
+        "sl-ext.dir.projects": {
+          "description": "The directory path the extension will use to look for projects to automatically open for",
+          "type": "string",
+          "default": "~/projects/sl",
+          "scope": "machine"
+        },
+        "sl-ext.hints.prefix": {
+          "markdownDescription": "The prefix character after a comment that the extension will use to look for hints as to how to handle the file\n\ne.g. `--@project <project_name>`\nSuported Hints\n|Hint|Description|\n|----|----|\n|`project`|The folder in the projects dir to look in|\n|`path`|The path on the system to look in, (overrides project)|\n|`file`|The file in project or path to link to|",
+          "type": "string",
+          "default": "@",
+          "scope": "machine"
+        },
+        "sl-ext.watcher.tempFilesRequireDirectoryPrefix": {
+          "markdownDescription": "Wether the the tempfile must start with the direcotry name for a script\ne.g. Script in folder `project_name/main.luau` will require the script in sl to be named like `project_name main` or `project_name/main`\nThis can be bypassed with hints",
+          "type": "boolean",
+          "default": true,
+          "scope": "window"
+        },
+        "sl-ext.watcher.fileExtensions": {
+          "description": "What file extensions should the be monitored for",
+          "type": "array",
+          "default": [
+            "lsl",
+            "luau",
+            "lua"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "scope": "resource"
+        },
+        "sl-ext.preprocessor.watchIncludes": {
+          "markdownDescription": "**NOT IMPLEMENTED YET**: Wether the extension should monitor included files via #include, or preprocessor file list output",
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
+        "sl-ext.preprocessor.command": {
+          "markdownDescription": "**NOT IMPLEMENTED YET**: Command to execute as a preprocessor when files change, the output of this will be put into the temp file the viewer created\n\nSupports the following replacements\n\n|Replacement|Description|\n|----|----|\n|`%script%`|The path of the file for the preprocessor to start on|\n|`%lang%`|The language that the extension believes the script is|\n\ne.g. `python ~/sl/LSL-PyOptimizer/main.py --bom %script%`",
+          "type": "string",
+          "default": "",
+          "scope": "resource"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.98.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "eslint": "^9.23.0",
+    "typescript": "^5.8.2",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1"
+  }
+}
