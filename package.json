@@ -2,7 +2,7 @@
   "name": "sl-external-editor",
   "displayName": "SL-External-Editor",
   "description": "Integrate vs code with the secondlife clients external editor feature",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WolfGangS/SL-External-Editor.git"
@@ -46,9 +46,9 @@
           "scope": "machine"
         },
         "sl-ext.watcher.tempFilesRequireDirectoryPrefix": {
-          "markdownDescription": "Wether the the tempfile must start with the direcotry name for a script\ne.g. Script in folder `project_name/main.luau` will require the script in sl to be named like `project_name main` or `project_name/main`\nThis can be bypassed with hints",
+          "markdownDescription": "Wether the the script must start with the direcotry name before the file name\ne.g. Script in folder `project_name/main.luau` will require the script in sl to be named like `project_name main` or `project_name/main`\nThis can be bypassed with hints",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "scope": "window"
         },
         "sl-ext.watcher.fileExtensions": {

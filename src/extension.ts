@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const relative = vscode.workspace.asRelativePath(e.fileName);
 		const tempFile = TempWatcher.Get().getMatchingTempFile(
 			e.fileName,
-			relative.split(path.sep).length < 2,
+			relative,
 		);
 		if (tempFile) {
 			const root = tempFile.rootFile == e.fileName.toLowerCase();

@@ -7,9 +7,9 @@ import { Config, getConfig } from "./config";
 type WatchedFileHints = { [k: string]: string | undefined };
 
 enum Language {
-    None,
-    LSL,
-    SLua,
+    None = "None",
+    LSL = "LSL",
+    SLua = "SLua",
 }
 
 type WatchedFile = {
@@ -47,6 +47,17 @@ function getLanguageForFileExt(fileExt: string): Language {
     }
 }
 
+function getFileExtensionsForLanguage(lang: Language): string[] {
+    switch (lang) {
+        case Language.SLua:
+            return ["luau", "slua", "lua"];
+        case Language.LSL:
+            return ["lsl"];
+        default:
+            return [];
+    }
+}
+
 function getFileExtensions(): string[] {
     return (getConfig<string[]>(Config.WatcherFileExtensions) || [])
         .map((s) => s.toLowerCase());
@@ -72,6 +83,7 @@ export class TempWatcher implements vscode.Disposable {
                 "Temp",
             )
             : vscode.Uri.file("/tmp");
+        output.appendLine(`Setup '${tempDir}'`);
         this.instance = new TempWatcher(tempDir, output);
         return this.instance;
     }
@@ -201,8 +213,19 @@ export class TempWatcher implements vscode.Disposable {
         }
     }
 
-    getMatchingTempFile(filePath: string, root: boolean): WatchedFile | null {
+    getMatchingTempFile(
+        filePath: string,
+        relativePath: string,
+    ): WatchedFile | null {
         filePath = filePath.toLowerCase();
+        this.output.appendLine(
+            " ========================= TEST ========================= ",
+        );
+        this.output.appendLine("FP: " + filePath);
+        this.output.appendLine(
+            "RP: " + relativePath +
+                ` ${JSON.stringify(relativePath.split(path.sep))}`,
+        );
         for (const watchedName in this.watched) {
             this.output.appendLine("TEST: " + watchedName);
             const watchedFile = this.watched[watchedName];
@@ -210,7 +233,13 @@ export class TempWatcher implements vscode.Disposable {
                 return watchedFile;
             }
             if (watchedFile.rootFile == filePath) return watchedFile;
-            if (this.fileNameMatchesWatchedFile(watchedFile, filePath, root)) {
+            if (
+                this.fileNameMatchesWatchedFile(
+                    watchedFile,
+                    filePath,
+                    relativePath,
+                )
+            ) {
                 this.output.appendLine(`MATCH: ${filePath}`);
                 this.output.appendLine(`MATCH: ${JSON.stringify(watchedFile)}`);
                 watchedFile.rootFile = filePath;
@@ -223,86 +252,148 @@ export class TempWatcher implements vscode.Disposable {
     fileNameMatchesWatchedFile(
         file: WatchedFile,
         filePath: string,
-        root: boolean,
+        relativePath: string,
     ): boolean {
-        const fileName = path.basename(filePath);
-        const fileExt = fileName.split(".").pop() || "";
+        const fileExt = filePath.split(".").pop() || "";
         const exts = getFileExtensions();
-        if (!exts.includes(fileExt)) return false;
-        const dirPath = path.dirname(filePath);
-        const parts = fileName.split(".");
-        parts.pop();
-        const fileNameSansExt = parts.join(".");
-        const dirs = dirPath.split(path.sep);
-        const dir = dirs[dirs.length - 1];
-        const filePathSansExt = `${dirPath}${path.sep}${fileNameSansExt}`;
-        this.output.appendLine(`CHECK PATH: ${filePath}`);
-        this.output.appendLine(`CHECK EXT: ${fileExt}`);
-        this.output.appendLine(`CHECK NAME: ${fileName}`);
-        this.output.appendLine(`CHECK DIR: ${dirPath}`);
 
-        if (getLanguageForFileExt(fileExt) !== file.language) return false;
-
-        const pathHint = file.hints["path"] || "";
-        if (pathHint) {
-            return dirPath.startsWith(pathHint) &&
-                fileNameSansExt == file.scriptName;
-        }
-        const projectHint = file.hints["project"];
-        if (projectHint) {
-            const parts = dirPath.split(projectHint);
-            if (parts.length == 2) {
-                let projPath = parts.pop() as string;
-                this.output.appendLine(
-                    `CHECK PROJECT: ${projectHint} > ${projPath}`,
-                );
-                while (projPath?.startsWith(path.sep)) {
-                    projPath = projPath.substring(1);
-                }
-                return this.createAlternateNameArray(
-                    [projPath],
-                    `${fileNameSansExt}`,
-                    fileExt,
-                ).includes(file.scriptName);
-            }
-            this.output.appendLine("NOT IN PROJECT");
+        if (!exts.includes(fileExt)) {
+            this.output.appendLine(
+                `CHECK: File extension ... ${fileExt} ... FAIL`,
+            );
             return false;
         }
-        if (
-            getConfig<boolean>(Config.WatcherFilesRequireDirectoryPrefix) ||
-            !root
-        ) {
-            this.output.appendLine("Dir Prefix Required");
-            return this.createAlternateNameArray(
-                [dir],
-                `${fileNameSansExt}`,
-                fileExt,
-            )
-                .includes(file.scriptName);
+
+        if (!this.filePathTests(file, filePath, relativePath)) {
+            return false;
         }
-        return fileNameSansExt == file.scriptName ||
-            fileName == file.scriptName;
+
+        const lang = getLanguageForFileExt(fileExt);
+        if (lang != file.language) {
+            this.output.appendLine(
+                `CHECK: Language ... ${file.language} == ${lang} ... FAIL`,
+            );
+            vscode.window.showWarningMessage(
+                `Saved file matches name but is unexpected language.\nMatched file is: ${file.language}\nSaved file is: ${lang}`,
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    private filePathTests(
+        file: WatchedFile,
+        filePath: string,
+        relativePath: string,
+    ) {
+        const pathHint = file.hints["path"] || "";
+        if (pathHint) {
+            this.output.append(`CHECK: Path hint '${pathHint}' ...`);
+            if (!filePath.startsWith(pathHint)) {
+                this.output.appendLine("FAIL, not path");
+                return false;
+            }
+            relativePath = filePath.split(pathHint).pop() || "";
+            return this.testRelativePath(relativePath, file);
+        }
+
+        const projectHint = file.hints["project"];
+        if (projectHint) {
+            this.output.append(`CHECK: Project hint '${projectHint}' ...`);
+            if (!filePath.includes(projectHint)) {
+                this.output.appendLine("FAIL, not project");
+                return false;
+            }
+            relativePath = filePath.split(projectHint).pop() || "";
+            return this.testRelativePath(relativePath, file);
+        }
+
+        if (
+            getConfig<boolean>(Config.WatcherFilesRequireDirectoryPrefix)
+        ) {
+            this.output.append("CHECK: Dir prefix ... ");
+            const parts = filePath.split(relativePath);
+            let dirPath = parts[0] || "";
+            while (dirPath.endsWith(path.sep)) {
+                dirPath = dirPath.substring(0, dirPath.length - 1);
+            }
+            const dir = dirPath.split(path.sep).pop() || "";
+            if (dir.length < 1) {
+                this.output.appendLine("FAIL empty");
+                return false;
+            }
+            relativePath = dir + path.sep + relativePath;
+            return this.testRelativePath(relativePath, file);
+        }
+
+        this.output.append("CHECK: Default ... ");
+
+        return this.testRelativePath(relativePath, file);
+    }
+
+    private testRelativePath(
+        relativePath: string,
+        file: WatchedFile,
+    ): boolean {
+        this.output.append(relativePath + " > " + file.scriptName + " ... ");
+        const exts = getFileExtensionsForLanguage(file.language).map((e) =>
+            `.${e}`
+        );
+        exts.push("");
+
+        const scriptNames = exts.map((e) => `${file.scriptName}${e}`);
+
+        const test = this.testAlternativeRelativePaths(
+            relativePath,
+            scriptNames,
+        );
+
+        if (test) {
+            this.output.appendLine("OK!");
+            return true;
+        } else {
+            this.output.appendLine("FAIL, not relative");
+            return false;
+        }
+    }
+
+    private testAlternativeRelativePaths(
+        relativePath: string,
+        scriptNames: string[],
+    ) {
+        const alternatives = this.createAlternateNameArray(relativePath);
+        this.output.appendLine(" TESTING");
+        this.output.appendLine(
+            JSON.stringify(
+                alternatives.map((s) => {
+                    const parts = s.split(".");
+                    parts.pop();
+                    return parts.join(".");
+                }),
+                null,
+                2,
+            ),
+        );
+        for (const scriptName of scriptNames) {
+            if (alternatives.includes(scriptName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private createAlternateNameArray(
-        dirs: string[],
-        filePath: string,
-        ext: string,
+        relative: string,
     ): string[] {
-        let data: string[] = [];
-        for (const dir of dirs) {
-            const fpath = `${dir}${path.sep}${filePath}`;
-            data = [
-                ...data,
-                fpath,
-                fpath.replaceAll(path.sep, ""),
-                fpath.replaceAll(path.sep, " "),
-                fpath.replaceAll(path.sep, "_"),
-                fpath.replaceAll(path.sep, "-"),
-                fpath.replaceAll(path.sep, "."),
-            ];
-        }
-        return [...data, ...data.map((s) => `${s}.${ext}`)];
+        return [
+            relative,
+            relative.replaceAll(path.sep, ""),
+            relative.replaceAll(path.sep, " "),
+            relative.replaceAll(path.sep, "_"),
+            relative.replaceAll(path.sep, "-"),
+            relative.replaceAll(path.sep, "."),
+        ];
     }
 
     dispose() {

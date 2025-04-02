@@ -14,9 +14,16 @@ export class Output implements vscode.Disposable {
     }
 
     getHandle(prefix: string): OutputHandle {
+        let sameLine = false;
         return {
-            append: (txt: string) => this.append(prefix, txt),
-            appendLine: (txt: string) => this.appendLine(prefix, txt),
+            append: (txt: string) => {
+                this.append(sameLine ? "" : prefix, txt);
+                sameLine = true;
+            },
+            appendLine: (txt: string) => {
+                this.appendLine(sameLine ? "" : prefix, txt);
+                sameLine = false;
+            },
             getHandle: (subPrefix: string) =>
                 this.getHandle(`${prefix}>${subPrefix}`),
         };
@@ -24,7 +31,8 @@ export class Output implements vscode.Disposable {
 
     append(prefix: string, text: string) {
         if (this.disposed) return;
-        this.output.append(`[${prefix}]: ${text}`);
+        if (prefix.length) prefix = `[${prefix}]: `;
+        this.output.append(`${prefix}${text}`);
     }
 
     appendLine(prefix: string, text: string) {
