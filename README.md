@@ -1,4 +1,4 @@
-# sl-external-editor README
+# SL External Editor
 
 This Extension is designed to integrate vscode better as the external editor for
 Secondlife
