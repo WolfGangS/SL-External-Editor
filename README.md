@@ -63,7 +63,7 @@ for LSL, `--` for SLua
   - But not one like this
     `/home/user/projects/huds/secondlife/space_roleplay/main.luau`
   - This hint will also be used to try and automatically open the right folder,
-    if the `secondlifeExternalEditor.dir.projects` config option is set.
+    if the `secondLifeExternalEditor.dir.projects` config option is set.
 - `@file <file_name>` this will override the default script name detection
   mechanism, it can be combined with `@project` to specify files inside a
   project
@@ -76,41 +76,41 @@ for LSL, `--` for SLua
 
 This extension contributes the following settings:
 
-- `secondlifeExternalEditor.enabled`: Recommend this is set at a workspace level
+- `secondLifeExternalEditor.enabled`: Recommend this is set at a workspace level
   rather than system wide
-- `secondlifeExternalEditor.dir.projects`: _**UNUSED**_ Will be used to open
+- `secondLifeExternalEditor.dir.projects`: _**UNUSED**_ Will be used to open
   vscode automatically to the right director inside of this specified one, if it
   can match a file.
-- `secondlifeExternalEditor.hints.prefix`: The prefix to use to provide hints to
+- `secondLifeExternalEditor.hints.prefix`: The prefix to use to provide hints to
   the extension
-- `secondlifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix`: Sets
+- `secondLifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix`: Sets
   wether scripts need to be named with their folder name as well (this can be
   disabled, but is recommended to avoid false matches, especially when having
   multiple projects open at once) e.g. `<folder_name>/<file_name>` as the name
   of your script in SL.
-- `secondlifeExternalEditor.watcher.fileExtensions`: List of file extensions to
+- `secondLifeExternalEditor.watcher.fileExtensions`: List of file extensions to
   care about. (Defaults to `lua, luau, lsl, slua`)
-- `secondlifeExternalEditor.download` Wether Type Def files should be
+- `secondLifeExternalEditor.download` Wether Type Def files should be
   automatically downloaded
-- `secondlifeExternalEditor.download.location` Where those files should be
+- `secondLifeExternalEditor.download.location` Where those files should be
   stored for your projects
 - Requires
   [Luau Language Server](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp)
   or similar
-  - `secondlifeExternalEditor.luau-lsp.downloadTypeDefs` A list of url's to
+  - `secondLifeExternalEditor.luau-lsp.downloadTypeDefs` A list of url's to
     download Luau Type Def files from
-  - `secondlifeExternalEditor.luau-lsp.downloadApiDocs` A list of url's to
+  - `secondLifeExternalEditor.luau-lsp.downloadApiDocs` A list of url's to
     download Luau-LSP Api documentation files from
 - Requires
   [Selene](https://marketplace.visualstudio.com/items?itemName=Kampfkarren.selene-vscode)
   or similar
-  - `secondlifeExternalEditor.selene.download` The location to download a selene
+  - `secondLifeExternalEditor.selene.download` The location to download a selene
     standard library definition from
 - _**Not yet implemented**_
-  - `secondlifeExternalEditor.preprocessor.command`: _**NOT IMPLMENETED**_ The
+  - `secondLifeExternalEditor.preprocessor.command`: _**NOT IMPLMENETED**_ The
     command to execute as a preprocessor step to affect the output before it is
     put into the viewers temp file
-  - `secondlifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
+  - `secondLifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
     If the preprocessor outputs compatible information about extra files it
     included, then the extension will watch for those files changing as well
 
@@ -127,6 +127,7 @@ This extension contributes the following settings:
 
 ### 0.0
 
+- `0.0.8` Add file open handling and auto closing of temp files
 - `0.0.7` Fix for file copying not overwriting existing files
 - `0.0.6` Setup publisher
 - `0.0.5` Fix version issue

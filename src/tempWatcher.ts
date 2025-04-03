@@ -23,6 +23,7 @@ export type WatchedFile = {
     hintPrefix: string;
     includedFiles: string[];
     rootFile: string;
+    multiMatch: boolean;
 };
 
 function getCommentFormatForLanguage(lang: Language): string {
@@ -181,6 +182,7 @@ export class TempWatcher implements vscode.Disposable {
             hintPrefix: getConfig<string>(Config.HintsPrefix) || "",
             rootFile: "",
             includedFiles: [],
+            multiMatch: false,
         };
     }
 
@@ -233,10 +235,10 @@ export class TempWatcher implements vscode.Disposable {
         }
     }
 
-    getMatchingTempFile(
+    getMatchingTempFiles(
         filePath: string,
         relativePath: string,
-    ): WatchedFile | null {
+    ): WatchedFile[] {
         filePath = filePath.toLowerCase();
         this.output.appendLine(
             " ========================= TEST ========================= ",
@@ -246,13 +248,14 @@ export class TempWatcher implements vscode.Disposable {
             "RP: " + relativePath +
                 ` ${JSON.stringify(relativePath.split(path.sep))}`,
         );
+        const matches: WatchedFile[] = [];
         for (const watchedName in this.watched) {
             this.output.appendLine("TEST: " + watchedName);
             const watchedFile = this.watched[watchedName];
             if (watchedFile.includedFiles.includes(filePath)) {
-                return watchedFile;
+                return [watchedFile];
             }
-            if (watchedFile.rootFile == filePath) return watchedFile;
+            if (watchedFile.rootFile == filePath) return [watchedFile];
             if (
                 this.fileNameMatchesWatchedFile(
                     watchedFile,
@@ -262,15 +265,18 @@ export class TempWatcher implements vscode.Disposable {
             ) {
                 this.output.appendLine(`MATCH: ${filePath}`);
                 this.output.appendLine(`MATCH: ${JSON.stringify(watchedFile)}`);
-                watchedFile.rootFile = filePath;
-                return watchedFile;
+                matches.push(watchedFile);
             }
         }
-        return null;
+        if (matches.length == 1) {
+            matches[0].rootFile = filePath;
+        }
+        return matches;
     }
 
     getWatchedFileForFileUri(fileUri: vscode.Uri): WatchedFile | null {
-        return this.watched[fileUri.path] || null;
+        const base = path.basename(fileUri.path);
+        return this.watched[base] || null;
     }
 
     fileNameMatchesWatchedFile(

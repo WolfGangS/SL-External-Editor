@@ -3,19 +3,46 @@ import * as vscode from "vscode";
 import { TempWatcher, WatchedFile } from "./tempWatcher";
 
 export function setup(output: OutputHandle) {
-    vscode.workspace.onDidSaveTextDocument((e) => {
+    vscode.workspace.onDidSaveTextDocument(async (e) => {
         output.appendLine("SAVE: " + e.fileName);
         const relative = vscode.workspace.asRelativePath(e.fileName);
-        const tempFile = TempWatcher.Get().getMatchingTempFile(
+        const tempFiles = TempWatcher.Get().getMatchingTempFiles(
             e.fileName,
             relative,
         );
-        if (tempFile) {
-            const root = tempFile.rootFile == e.fileName.toLowerCase();
-            if (root) saveDataToTempFile(e.fileName, tempFile);
-            else saveIncludeFile(tempFile);
+        if (tempFiles.length == 1) {
+            const tempFile = tempFiles[0];
+            if (tempFile.multiMatch) {
+                const resp = await vscode.window.showWarningMessage(
+                    "There are multiple files that could match to this SL script! are you sure you want to save?",
+                    "No",
+                    "Yes",
+                    "Yes and don't ask again",
+                );
+                switch (resp) {
+                    case "Yes and don't ask again":
+                        tempFile.rootFile = e.fileName;
+                    case "Yes":
+                        doSave(e, tempFile);
+                        break;
+                    case "No":
+                    default:
+                        break;
+                }
+                return;
+            } else doSave(e, tempFile);
+        } else if (tempFiles.length > 1) {
+            vscode.window.showErrorMessage(
+                "Found multiple matching temp files, not pushing content to SL",
+            );
         }
     });
+}
+
+async function doSave(doc: vscode.TextDocument, tempFile: WatchedFile) {
+    const root = tempFile.rootFile == doc.fileName.toLowerCase();
+    if (root) saveDataToTempFile(doc.fileName, tempFile);
+    else saveIncludeFile(tempFile);
 }
 
 async function saveIncludeFile(tempFile: WatchedFile) {

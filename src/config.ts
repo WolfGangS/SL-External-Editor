@@ -2,20 +2,21 @@ import * as vscode from "vscode";
 import { OutputHandle } from "./output";
 
 export enum Config {
-    Enabled = "secondlifeExternalEditor.enabled",
-    DirProjects = "secondlifeExternalEditor.dir.projects",
-    HintsPrefix = "secondlifeExternalEditor.hints.prefix",
+    Enabled = "secondLifeExternalEditor.enabled",
+    DirProjects = "secondLifeExternalEditor.dir.projects",
+    HintsPrefix = "secondLifeExternalEditor.hints.prefix",
     WatcherFilesRequireDirectoryPrefix =
-        "secondlifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix",
-    WatcherFileExtensions = "secondlifeExternalEditor.watcher.fileExtensions",
+        "secondLifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix",
+    WatcherFileExtensions = "secondLifeExternalEditor.watcher.fileExtensions",
     PreProcWatchIncludes =
-        "secondlifeExternalEditor.preprocessor.watchIncludes",
-    PreProcCommand = "secondlifeExternalEditor.preprocessor.command",
-    Download = "secondlifeExternalEditor.download",
-    DownloadLocation = "secondlifeExternalEditor.download.location",
-    LuauLSPDefs = "secondlifeExternalEditor.luau-lsp.downloadTypeDefs",
-    LuauLSPDocs = "secondlifeExternalEditor.luau-lsp.downloadApiDocs",
-    SeleneDocs = "secondlifeExternalEditor.selene.download",
+        "secondLifeExternalEditor.preprocessor.watchIncludes",
+    PreProcCommand = "secondLifeExternalEditor.preprocessor.command",
+    Download = "secondLifeExternalEditor.download",
+    DownloadLocation = "secondLifeExternalEditor.download.location",
+    LuauLSPDefs = "secondLifeExternalEditor.luau-lsp.downloadTypeDefs",
+    LuauLSPDocs = "secondLifeExternalEditor.luau-lsp.downloadApiDocs",
+    SeleneDocs = "secondLifeExternalEditor.selene.download",
+    AutoCloseTemp = "secondLifeExternalEditor.matcher.autoCloseTempScript",
 }
 
 export enum DownloadLocation {
@@ -25,11 +26,18 @@ export enum DownloadLocation {
     Types = "types",
 }
 
+let configuration: vscode.WorkspaceConfiguration | null = null;
+
 export function getConfig<T>(config: Config): T | null {
     const parts = config.split(".");
     parts.shift();
     const str = parts.join(".");
-    return vscode.workspace.getConfiguration("secondlifeExternalEditor").get<T>(
+    if (!configuration) {
+        configuration = vscode.workspace.getConfiguration(
+            "secondLifeExternalEditor",
+        );
+    }
+    return configuration.get<T>(
         str,
     ) ?? null;
 }
@@ -50,6 +58,7 @@ export class ConfigWatcher implements vscode.Disposable {
         [Config.LuauLSPDocs]: {},
         [Config.SeleneDocs]: {},
         [Config.DownloadLocation]: {},
+        [Config.AutoCloseTemp]: {},
     };
     private output: OutputHandle;
 
@@ -85,6 +94,7 @@ export class ConfigWatcher implements vscode.Disposable {
     }
 
     start() {
+        this.stop();
         this.output.appendLine("Started");
         this.watcher = vscode.workspace.onDidChangeConfiguration((e) => {
             this.onChange(e);
@@ -108,6 +118,7 @@ export class ConfigWatcher implements vscode.Disposable {
     stop() {
         if (this.watcher) {
             this.watcher.dispose();
+            this.watcher = null;
         }
         return this;
     }
