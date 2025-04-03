@@ -127,6 +127,7 @@ This extension contributes the following settings:
 
 ### 0.0
 
+- `0.0.7` Fix for file copying not overwriting existing files
 - `0.0.6` Setup publisher
 - `0.0.5` Fix version issue
 - `0.0.4` Implement Automatic type def downloads
