@@ -40,6 +40,10 @@ export function activate(context: vscode.ExtensionContext) {
 	setup(context);
 }
 
+export function getOutput(name: string): OutputHandle | null {
+	return mainOutput?.getHandle(name) || null;
+}
+
 export function getContext(): vscode.ExtensionContext | null {
 	return extContext;
 }

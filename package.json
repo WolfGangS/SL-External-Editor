@@ -3,7 +3,7 @@
   "displayName": "SL External Editor",
   "publisher": "wlf-io",
   "description": "Integrate vs code with the Second Life client external editor feature",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WolfGangS/SL-External-Editor.git"
@@ -109,7 +109,7 @@
             "Put the type def files in a folder called '.types'"
           ],
           "enumItemLabels": [ "Global", "Root", ".vscode", ".types" ],
-          "default": ".types",
+          "default": "types",
           "scope": "window"
         },
         "secondLifeExternalEditor.luau-lsp.downloadTypeDefs": {

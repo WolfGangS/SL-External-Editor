@@ -26,18 +26,13 @@ export enum DownloadLocation {
     Types = "types",
 }
 
-let configuration: vscode.WorkspaceConfiguration | null = null;
-
 export function getConfig<T>(config: Config): T | null {
     const parts = config.split(".");
     parts.shift();
     const str = parts.join(".");
-    if (!configuration) {
-        configuration = vscode.workspace.getConfiguration(
-            "secondLifeExternalEditor",
-        );
-    }
-    return configuration.get<T>(
+    return vscode.workspace.getConfiguration(
+        "secondLifeExternalEditor",
+    ).get<T>(
         str,
     ) ?? null;
 }

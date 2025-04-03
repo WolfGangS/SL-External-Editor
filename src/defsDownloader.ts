@@ -3,6 +3,7 @@ import { OutputHandle } from "./output";
 import * as vscode from "vscode";
 import path from "path";
 import { arrayMismatch } from "./util";
+import { getOutput } from "./extension";
 
 const seleneToml = `std = "sl_selene_defs"
 
@@ -209,7 +210,7 @@ export class DefsDownloader {
                     { overwrite: true },
                 );
             }
-            dlDefs.push(target.path);
+            dlDefs.push(vscode.workspace.asRelativePath(target));
         }
 
         const dlDocs: string[] = [];
@@ -225,7 +226,7 @@ export class DefsDownloader {
                     { overwrite: true },
                 );
             }
-            dlDocs.push(target.path);
+            dlDocs.push(vscode.workspace.asRelativePath(target));
         }
 
         const defs = luauConfig.get<string[]>("types.definitionFiles") || [];
@@ -294,6 +295,7 @@ async function getPathForDefFileInstall(
     if (selene && choice == DownloadLocation.Global) {
         choice = DownloadLocation.Root;
     }
+    getOutput("DL PATH DEF")?.appendLine("Choice: " + choice);
     if (choice == DownloadLocation.Global) {
         return uri;
     } else {
