@@ -3,6 +3,7 @@ import os from "os";
 import path from "path";
 import { OutputHandle } from "./output";
 import { Config, getConfig } from "./config";
+import { cleanPathString } from "./util";
 
 type WatchedFileHints = { [k: string]: string | undefined };
 
@@ -36,7 +37,7 @@ function getCommentFormatForLanguage(lang: Language): string {
     }
 }
 
-function getLanguageForFileExtension(fileExt: string): Language {
+export function getLanguageForFileExtension(fileExt: string): Language {
     switch (fileExt.toLowerCase()) {
         case "lua":
         case "luau":
@@ -212,7 +213,7 @@ export class TempWatcher implements vscode.Disposable {
                     if (!trimmed.startsWith(file.hintPrefix)) continue;
                     trimmed = trimmed.substring(file.hintPrefix.length).trim();
                     const parts = trimmed.split(" ");
-                    const hint = parts.shift();
+                    const hint = parts.shift()?.toLowerCase();
                     trimmed = parts.join(" ").trim();
                     if (hint) {
                         hints[hint] = trimmed.toLowerCase();
@@ -220,7 +221,11 @@ export class TempWatcher implements vscode.Disposable {
                 }
                 file.hints = hints;
                 if (hints["file"]) {
+                    hints["file"] = cleanPathString(hints["file"]);
                     file.scriptName = hints["file"];
+                }
+                if (hints["project"]) {
+                    hints["project"] = cleanPathString(hints["project"]);
                 }
                 this.fileCreated(file);
             });
