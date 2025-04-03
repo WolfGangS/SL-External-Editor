@@ -11,9 +11,35 @@ Secondlife viewer has created in the system temp directory
 This is done either purely by name, by directory and name, or by specified hints
 using directory and name to match
 
-## Requirements
+### Support For
 
-Secondlife using the external editor feature see Debug Setting `ExternalEditor`
+- Windows, Linux, Mac
+- [Luau Language Server](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp)
+  (optional)
+- [Selene](https://marketplace.visualstudio.com/items?itemName=Kampfkarren.selene-vscode)
+  (optional)
+- Any secondlife viewer that has the `ExternalEditor` feature
+
+### Hints
+
+Certain hints can be added to a script to make working with this extension
+smoother, they are completely optional, but will help in situations where you
+have many seperate projects open at once, or use a single "Mono Project" folder.
+
+Hints are written prefixed with the single line comment for their langauge, `//`
+for LSL, `--` for SLua
+
+- `@project <project_dir>` setting this will make the extension only match files
+  for saving if they are within a directory path that contains `project_dir`
+  - e.g. `-- @project huds/space_roleplay`
+  - Would match a files in a directory like this
+    `/home/user/secondlife/huds/space_roleplay/scripts/main.luau`
+  - But not one like this
+    `/home/user/projects/huds/secondlife/space_roleplay/main.luau`
+  - This hint is also used to try and automatically open the right folder, if
+    the `secondlifeExternalEditor.dir.projects` config option is set.
+- `@file` this will override the default script name detection mechanism, it can
+  be combined with `@project` to specify files inside a project
 
 ## Extension Settings
 
@@ -31,17 +57,32 @@ This extension contributes the following settings:
   disabled, but is reconmended to avoid false matches) e.g.
   `<folder_name>/<file_name>` as the name of your script in sl.
 - `secondlifeExternalEditor.watcher.fileExtensions`: List of file extensions to
-  care about. (Defaults to `lua, luau, lsl`)
-- `secondlifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
-  This is to come
+  care about. (Defaults to `lua, luau, lsl, slua`)
+- `secondlifeExternalEditor.download` Wehter Type Def files should be
+  automatically downloaded
+- `secondlifeExternalEditor.download.location` Where those files should be
+  stored for your projects
+- Requires
+  [Luau Language Server](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp)
+  or similar
+  - `secondlifeExternalEditor.luau-lsp.downloadTypeDefs` A list of url's to
+    download Luau Type Def files from
+  - `secondlifeExternalEditor.luau-lsp.downloadApiDocs` A list of url's to
+    download Luau-LSP Api documentation files from
+- Requires
+  [Selene](https://marketplace.visualstudio.com/items?itemName=Kampfkarren.selene-vscode)
+  or similar
+  - `secondlifeExternalEditor.selene.download` The location to download a selene
+    standard library definition from
 - `secondlifeExternalEditor.preprocessor.command`: _**NOT IMPLMENETED**_ This is
   to come
+- `secondlifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
+  This is to come
 
 ## Planned Features
 
 - Integration with external preprocessing tools.
 - Automatic opening to relevant directory if possible
-- Mac support for crazy temporaty file paths
 
 ## Known Issues
 
@@ -49,6 +90,9 @@ This extension contributes the following settings:
 
 ## Release Notes
 
-### 0.0.1
+### 0.0
 
-- Testing
+- `0.0.4` Implment Automatic type def downloads
+- `0.0.3` Mac temp directory detection
+- `0.0.2` Windows file path fixes
+- `0.0.1` Initial implementation
