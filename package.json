@@ -2,7 +2,7 @@
   "name": "sl-external-editor",
   "displayName": "SL-External-Editor",
   "description": "Integrate vs code with the secondlife clients external editor feature",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WolfGangS/SL-External-Editor.git"
