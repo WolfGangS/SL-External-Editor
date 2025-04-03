@@ -3,6 +3,23 @@
 This Extension is designed to integrate vscode better as the external editor for
 Second Life
 
+## Setup
+
+I suggest that you chose a folder on your system to hold all your sl projects,
+without better support in the SL viewer directly it is difficult to manage
+multiple, though nothing is stopping you from having as many editors open as you
+like
+
+Setting the external editor config in the viewer to something like this..
+
+- Windows:
+  `"C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code\Code.exe" "C:\Users\<user>\projects\sl\scripts" "%s"`
+- Mac: `/opt/homebrew/bin/code -r "/Users/<user>/projects/sl/scripting" "%s"`
+- Linux: `/usr/bin/code "/home/<user>/projects/sl/scripting" "%s"`
+
+After that you should be good to go, though I would advise looking through the
+config options below, and trying the hint system.
+
 ## Features
 
 Detects saves to recognized file extensions, and matches them to files that the

@@ -12,7 +12,7 @@ enum Language {
     SLua = "SLua",
 }
 
-type WatchedFile = {
+export type WatchedFile = {
     ext: string;
     fileName: string;
     scriptName: string;
@@ -59,9 +59,32 @@ function getFileExtensionsForLanguage(lang: Language): string[] {
     }
 }
 
+let temp_dir: string | null = null;
+
+export function setTempDirFromFile(file: string) {
+    temp_dir = path.dirname(file);
+}
+
 function getFileExtensions(): string[] {
     return (getConfig<string[]>(Config.WatcherFileExtensions) || [])
         .map((s) => s.toLowerCase());
+}
+
+function getTempDir(): vscode.Uri {
+    if (temp_dir) return vscode.Uri.file(temp_dir);
+    switch (os.platform()) {
+        case "win32":
+            return vscode.Uri.joinPath(
+                vscode.Uri.file(process.env.LOCALAPPDATA || ""),
+                "Temp",
+            );
+        case "darwin":
+            return vscode.Uri.file(
+                process.env.TMPDIR || "",
+            );
+        default:
+            return vscode.Uri.file("/tmp");
+    }
 }
 
 export class TempWatcher implements vscode.Disposable {
@@ -78,12 +101,7 @@ export class TempWatcher implements vscode.Disposable {
     }
     static Setup(output: OutputHandle): TempWatcher {
         if (this.instance) this.instance.dispose();
-        const tempDir = os.platform() == "win32"
-            ? vscode.Uri.joinPath(
-                vscode.Uri.file(process.env.LOCALAPPDATA || ""),
-                "Temp",
-            )
-            : vscode.Uri.file("/tmp");
+        const tempDir = getTempDir();
         output.appendLine(`Setup '${tempDir}'`);
         this.instance = new TempWatcher(tempDir, output);
         return this.instance;

@@ -21,7 +21,15 @@
     "commands": [
       {
         "command": "sl-external-editor.enable",
-        "title": "Enable SL External Editor for directory"
+        "title": "SL External Editor: Enable"
+      },
+      {
+        "command": "sl-external-editor.updateLSP",
+        "title": "SL External Editor: Update LSP Defs"
+      },
+      {
+        "command": "sl-external-editor.setupSelene",
+        "title": "SL External Editor: Setup/Update Selene"
       }
     ],
     "configuration": {
@@ -72,10 +80,52 @@
           "scope": "resource"
         },
         "secondlifeExternalEditor.preprocessor.command": {
-          "markdownDescription": "**NOT IMPLEMENTED YET**: Command to execute as a preprocessor when files change, the output of this will be put into the temp file the viewer created\n\nSupports the following replacements\n\n|Replacement|Description|\n|----|----|\n|`%script%`|The path of the file for the preprocessor to start on|\n|`%lang%`|The language that the extension believes the script is|\n\ne.g. `python ~/sl/LSL-PyOptimizer/main.py --bom %script%`",
+          "markdownDescription": "**NOT IMPLEMENTED YET**: Command to execute as a preprocessor when files change, the output of this will be put into the temp file the viewer created\n\nSupports the following replacements\n\n|Replacement|Description|\n|----|----|\n|`%script%`|The path of the file for the preprocessor to start on|\n|`%out%`|The file to ouput to, if specified extension fill look for writes to that file for the output rather than `std_out`|\n|`%lang%`|The language that the extension believes the script is|\n\ne.g. `python ~/sl/LSL-PyOptimizer/main.py --bom %script%`",
           "type": "string",
           "default": "",
           "scope": "resource"
+        },
+        "secondlifeExternalEditor.download": {
+          "markdownDescription": "Wether extension should download SLua Type Defs",
+          "type": "boolean",
+          "default": true,
+          "scope": "machine"
+        },
+        "secondlifeExternalEditor.download.location": {
+          "markdownDescription": "Where downloaded definition files should be put for your projectm (selene cannot be global, and will default to root)",
+          "type": "string",
+          "enum": [ "global", "root", "vscode", "types" ],
+          "markdownEnumDescriptions": [
+            "Store in vscodes global config location",
+            "Put the type def files at the root level of your workspace",
+            "Put the type def files in the .vscode folder",
+            "Put the type def files in a folder called '.types'"
+          ],
+          "enumItemLabels": [ "Global", "Root", ".vscode", ".types" ],
+          "default": ".types",
+          "scope": "window"
+        },
+        "secondlifeExternalEditor.luau-lsp.downloadTypeDefs": {
+          "markdownDescription": "Url's to download SLua type definition files for the luau-lsp from.",
+          "type": "array",
+          "default": [
+            "https://slua.wlf.io/dist/ll.d.luau"
+          ],
+          "scope": "machine"
+        },
+        "secondlifeExternalEditor.luau-lsp.downloadApiDocs": {
+          "markdownDescription": "Url's to download SLua documentation files for the luau-lsp from.",
+          "type": "array",
+          "default": [
+            "https://slua.wlf.io/dist/ll.d.json"
+          ],
+          "scope": "machine"
+        },
+        "secondlifeExternalEditor.selene.download": {
+          "markdownDescription": "Url's to download SLua Selene Standard Library files from",
+          "type": "string",
+          "default": "https://slua.wlf.io/dist/sl_selene_defs.yml",
+          "scope": "machine"
         }
       }
     }
