@@ -42,7 +42,10 @@ function getFilePathForUrl(url: string, context: vscode.ExtensionContext) {
 export type DownloadResult = {
     lsp: boolean;
     selene: boolean;
+    snippet: boolean;
 };
+
+const state_next_download = "sl-external-editor.next-download";
 
 export class DefsDownloader {
     private static instance: DefsDownloader | null = null;
@@ -73,6 +76,27 @@ export class DefsDownloader {
         return this.instance;
     }
 
+    lspEnabled(): boolean {
+        return !!vscode.extensions.getExtension("johnnymorganz.luau-lsp");
+    }
+
+    seleneEnabled(): boolean {
+        return !!vscode.extensions.getExtension("Kampfkarren.selene-vscode");
+    }
+
+    needsDownload(): boolean {
+        if (!DefsDownloader.enabled()) return false;
+        const next =
+            this.context.globalState.get<number>(state_next_download) || 0;
+        const now = Math.floor(Date.now() / 1000);
+        this.output.appendLine(
+            `Next DL: ${new Date(next * 1000)} ${
+                next < now ? "true" : "false"
+            }`,
+        );
+        return next < now;
+    }
+
     async restrictToExistingLocalFiles(
         urls: string[],
     ): Promise<[string, vscode.Uri][]> {
@@ -90,78 +114,99 @@ export class DefsDownloader {
         return exists;
     }
 
-    getDownloadedDefs(): Promise<[string, vscode.Uri][]> {
-        return this.restrictToExistingLocalFiles(
+    async getDownloadedDefs(): Promise<[string, vscode.Uri][]> {
+        return await this.restrictToExistingLocalFiles(
             getConfig<string[]>(Config.LuauLSPDefs) || [],
         );
     }
 
     async getDownloadedDocs(): Promise<[string, vscode.Uri][]> {
-        return this.restrictToExistingLocalFiles(
+        return await this.restrictToExistingLocalFiles(
             getConfig<string[]>(Config.LuauLSPDocs) || [],
+        );
+    }
+
+    async getDownLoadedSnippets(): Promise<[string, vscode.Uri][]> {
+        return await this.restrictToExistingLocalFiles(
+            getConfig<string[]>(Config.DownloadSnippets) || [],
         );
     }
 
     async getDownloadedSelene(): Promise<[string, vscode.Uri][]> {
         const selene = getConfig<string>(Config.SeleneDocs);
         if (selene) {
-            return this.restrictToExistingLocalFiles([selene]);
+            return await this.restrictToExistingLocalFiles([selene]);
+        }
+        return Promise.resolve([]);
+    }
+
+    async getDownloadedSeleneToml(): Promise<[string, vscode.Uri][]> {
+        const selene = getConfig<string>(Config.SeleneToml);
+        if (selene) {
+            return await this.restrictToExistingLocalFiles([selene]);
         }
         return Promise.resolve([]);
     }
 
     async download(force: boolean = false): Promise<DownloadResult> {
         if (!DefsDownloader.enabled() && !force) {
-            return { lsp: false, selene: false };
-        }
-        if (
-            !vscode.extensions.getExtension("johnnymorganz.luau-lsp") && !force
-        ) {
-            return { lsp: false, selene: false };
+            return { lsp: false, selene: false, snippet: false };
         }
         const result = await Promise.all([
             this.downloadLSPData(force),
             this.downloadSelene(force),
+            this.downloadSnippets(force),
         ]);
+
+        this.context.globalState.update(
+            state_next_download,
+            Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 2),
+        );
+
         return {
             lsp: result[0].length > 0,
             selene: result[1].length > 0,
+            snippet: result[2].length > 0,
         };
     }
 
     async downloadLSPData(force: boolean): Promise<string[]> {
-        const res = await Promise.all([
-            this.downloadDefs(force),
-            this.downloadDocs(force),
-        ]);
-        return [...res[0], ...res[0]];
-    }
-
-    private async downloadDefs(force: boolean): Promise<string[]> {
-        const defs = getConfig<string[]>(Config.LuauLSPDefs) || [];
-        return (await Promise.all(defs.map((d) => this.downloadFile(d, force))))
+        const urls = [
+            ...(getConfig<string[]>(Config.LuauLSPDefs) || []),
+            ...(getConfig<string[]>(Config.LuauLSPDocs) || []),
+        ];
+        this.output.appendLine(`Downloading ${urls.length} LSP Def file(s)...`);
+        return (await Promise.all(
+            urls.map((d) => this.downloadFile(d, force)),
+        ))
             .filter((u) => u != null);
     }
 
-    private async downloadDocs(force: boolean): Promise<string[]> {
-        const docs = getConfig<string[]>(Config.LuauLSPDocs) || [];
-        return (await Promise.all(docs.map((d) => this.downloadFile(d, force))))
+    async downloadSnippets(force: boolean): Promise<string[]> {
+        const snips = getConfig<string[]>(Config.DownloadSnippets) || [];
+        this.output.appendLine(
+            `Downloading ${snips.length} Snippet file(s)...`,
+        );
+        return (await Promise.all(
+            snips.map((d) => this.downloadFile(d, force)),
+        ))
             .filter((u) => u != null);
     }
 
     async downloadSelene(force: boolean): Promise<string[]> {
-        const selene = getConfig<string>(Config.SeleneDocs);
-        if (selene) {
-            const change = await this.downloadFile(selene, force);
-            if (change) return [change];
-        }
-        return [];
+        this.output.appendLine("Downloading Selene...");
+        const selene = getConfig<string>(Config.SeleneDocs) || "";
+        const toml = getConfig<string>(Config.SeleneDocs) || "";
+        return (await Promise.all(
+            [selene, toml].map((d) => this.downloadFile(d, force)),
+        )).filter((u) => u != null);
     }
 
     private async downloadFile(
         url: string,
         force: boolean,
     ): Promise<string | null> {
+        if (!url.startsWith("https://")) return null;
         const file = getFilePathForUrl(url, this.context);
         try {
             const result = await fetch(url);
@@ -179,7 +224,9 @@ export class DefsDownloader {
                     file,
                     new TextEncoder().encode(text),
                 );
-                this.output.appendLine(`Saved: ${file.toString()}`);
+                this.output.appendLine(
+                    `Saved: ${path.basename(file.toString())}`,
+                );
                 return url;
             }
         } catch (_e) {
@@ -187,8 +234,8 @@ export class DefsDownloader {
         return null;
     }
 
-    async updateLuauLSPConfig(force: boolean) {
-        if (!vscode.extensions.getExtension("johnnymorganz.luau-lsp")) return;
+    async updateLuauLSPConfig(force: boolean = false) {
+        if (!this.lspEnabled() && !force) return;
 
         const luauConfig = vscode.workspace.getConfiguration("luau-lsp");
 
@@ -232,13 +279,6 @@ export class DefsDownloader {
         const defs = luauConfig.get<string[]>("types.definitionFiles") || [];
         const docs = luauConfig.get<string[]>("types.documentationFiles") || [];
 
-        if (
-            !force && !arrayMismatch(defs, dlDefs) &&
-            !arrayMismatch(docs, dlDocs)
-        ) {
-            return;
-        }
-
         luauConfig.update("types.definitionFiles", dlDefs);
         luauConfig.update("types.documentationFiles", dlDocs);
 
@@ -247,11 +287,37 @@ export class DefsDownloader {
         await vscode.commands.executeCommand("luau-lsp.reloadServer");
     }
 
-    async updateSeleneConfig(force: boolean = false) {
+    async updateSnippets(force: boolean = false) {
         if (!vscode.workspace.workspaceFolders) {
-            vscode.window.showWarningMessage(
-                "VSCode is not open in a directory",
+            if (force) {
+                vscode.window.showWarningMessage(
+                    "VSCode is not open in a directory",
+                );
+            }
+            return;
+        }
+
+        const wf = vscode.workspace.workspaceFolders[0].uri;
+        const snippets = await this.getDownLoadedSnippets();
+
+        for (const [url, cachedFile] of snippets) {
+            const base = path.basename(url);
+            await vscode.workspace.fs.copy(
+                cachedFile,
+                vscode.Uri.joinPath(wf, ".vscode", base),
+                { overwrite: true },
             );
+        }
+    }
+
+    async updateSeleneConfig(force: boolean = false) {
+        if (!this.seleneEnabled() && !force) return false;
+        if (!vscode.workspace.workspaceFolders) {
+            if (force) {
+                vscode.window.showWarningMessage(
+                    "VSCode is not open in a directory",
+                );
+            }
             return;
         }
         const sel = (await DefsDownloader.get().getDownloadedSelene()).pop();
@@ -275,14 +341,67 @@ export class DefsDownloader {
             "",
         );
 
+        let replaced = false;
+        let toml = (await getSeleneTomlFileContent(
+            (await this.getDownloadedSeleneToml())[0] || null,
+        ))
+            .split("\n")
+            .map((l) => {
+                if (
+                    l.trim().replaceAll(" ", "").replaceAll("\t", "")
+                        .startsWith("std=")
+                ) {
+                    replaced = true;
+                    return `std = "${relative}"`;
+                }
+                return l;
+            })
+            .join("\n");
+
+        if (toml.length < 1) return;
+
+        if (!replaced) {
+            toml = `std = "${relative}"\n${toml}`;
+        }
+
         await vscode.workspace.fs.writeFile(
             vscode.Uri.joinPath(wf, "selene.toml"),
-            new TextEncoder().encode(
-                seleneToml.replaceAll('"sl_selene_defs"', `"${relative}"`),
-            ),
+            new TextEncoder().encode(toml),
         );
         vscode.window.showInformationMessage("Selene Setup");
     }
+}
+
+async function getSeleneTomlFileContent(
+    cachedToml: [string, vscode.Uri] | null,
+): Promise<string> {
+    if (!vscode.workspace.workspaceFolders) {
+        return "";
+    }
+
+    const wf = vscode.workspace.workspaceFolders[0].uri;
+
+    try {
+        const fileContent = new TextDecoder().decode(
+            await vscode.workspace.fs.readFile(
+                vscode.Uri.joinPath(wf, "selene.toml"),
+            ),
+        );
+        if (fileContent.length > 10) return fileContent;
+    } catch (_e) {
+    }
+
+    if (cachedToml) {
+        try {
+            const text = new TextDecoder().decode(
+                await vscode.workspace.fs.readFile(cachedToml[1]),
+            );
+            if (text.length > 10) return text;
+        } catch (_e) {
+        }
+    }
+
+    return seleneToml;
 }
 
 async function getPathForDefFileInstall(
@@ -295,7 +414,7 @@ async function getPathForDefFileInstall(
     if (selene && choice == DownloadLocation.Global) {
         choice = DownloadLocation.Root;
     }
-    getOutput("DL PATH DEF")?.appendLine("Choice: " + choice);
+    //getOutput("DL PATH DEF")?.appendLine("Choice: " + choice);
     if (choice == DownloadLocation.Global) {
         return uri;
     } else {

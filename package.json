@@ -3,7 +3,7 @@
   "displayName": "SL External Editor",
   "publisher": "wlf-io",
   "description": "Integrate vs code with the Second Life client external editor feature",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WolfGangS/SL-External-Editor.git"
@@ -26,12 +26,20 @@
         "title": "SL External Editor: Enable"
       },
       {
+        "command": "sl-external-editor.updateAll",
+        "title": "SL External Editor: Update All Downloads"
+      },
+      {
         "command": "sl-external-editor.updateLSP",
         "title": "SL External Editor: Update LSP Defs"
       },
       {
         "command": "sl-external-editor.setupSelene",
         "title": "SL External Editor: Setup/Update Selene"
+      },
+      {
+        "command": "sl-external-editor.updateSnippets",
+        "title": "SL External Editor: Update Snippets"
       }
     ],
     "configuration": {
@@ -79,7 +87,7 @@
           "markdownDescription": "If temporary script files should be automatically closed on finding a match",
           "type": "boolean",
           "default": true,
-          "scope": "resource"
+          "scope": "window"
         },
         "secondLifeExternalEditor.preprocessor.watchIncludes": {
           "markdownDescription": "**NOT IMPLEMENTED YET**: Wether the extension should monitor included files via #include, or preprocessor file list output",
@@ -93,11 +101,11 @@
           "default": "",
           "scope": "resource"
         },
-        "secondLifeExternalEditor.download": {
+        "secondLifeExternalEditor.download.enabled": {
           "markdownDescription": "Wether extension should download SLua Type Defs",
           "type": "boolean",
           "default": true,
-          "scope": "machine"
+          "scope": "window"
         },
         "secondLifeExternalEditor.download.location": {
           "markdownDescription": "Where downloaded definition files should be put for your projectm (selene cannot be global, and will default to root)",
@@ -112,6 +120,14 @@
           "enumItemLabels": [ "Global", "Root", ".vscode", ".types" ],
           "default": "types",
           "scope": "window"
+        },
+        "secondLifeExternalEditor.download.snippets": {
+          "markdownDescription": "Url's to download as snippets.",
+          "type": "array",
+          "default": [
+            "https://slua.wlf.io/dist/slua.code-snippets"
+          ],
+          "scope": "machine"
         },
         "secondLifeExternalEditor.luau-lsp.downloadTypeDefs": {
           "markdownDescription": "Url's to download SLua type definition files for the luau-lsp from.",
@@ -133,6 +149,12 @@
           "markdownDescription": "Url's to download SLua Selene Standard Library files from",
           "type": "string",
           "default": "https://slua.wlf.io/dist/sl_selene_defs.yml",
+          "scope": "machine"
+        },
+        "secondLifeExternalEditor.selene.downloadToml": {
+          "markdownDescription": "Url's to download SLua Selene Standard Library files from",
+          "type": "string",
+          "default": "https://slua.wlf.io/dist/selene.toml",
           "scope": "machine"
         }
       }

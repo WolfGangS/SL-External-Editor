@@ -7,6 +7,8 @@ enum Commands {
     Enable = "sl-external-editor.enable",
     UpdateLSP = "sl-external-editor.updateLSP",
     SetupSelene = "sl-external-editor.setupSelene",
+    UpdateAll = "sl-external-editor.updateAll",
+    UpdateSnippets = "sl-external-editor.updateSnippets",
 }
 
 export function setupCommands(
@@ -24,8 +26,9 @@ export function setupCommands(
                 .update("enabled", true);
             if (DefsDownloader.enabled()) {
                 await DefsDownloader.get().download();
-                await DefsDownloader.get().updateLuauLSPConfig(true);
-                await DefsDownloader.get().updateSeleneConfig(true);
+                await DefsDownloader.get().updateLuauLSPConfig();
+                await DefsDownloader.get().updateSeleneConfig();
+                await DefsDownloader.get().updateSnippets();
             }
         },
     );
@@ -64,4 +67,24 @@ export function setupCommands(
         },
     );
     context.subscriptions.push(commandSetupSlene);
+
+    const commandUpdateAll = vscode.commands.registerCommand(
+        Commands.UpdateAll,
+        async () => {
+            await DefsDownloader.get().download(true);
+            await DefsDownloader.get().updateLuauLSPConfig(true);
+            await DefsDownloader.get().updateSeleneConfig(true);
+            await DefsDownloader.get().updateSnippets(true);
+        },
+    );
+    context.subscriptions.push(commandUpdateAll);
+
+    const commandUpdateSnippets = vscode.commands.registerCommand(
+        Commands.UpdateSnippets,
+        async () => {
+            await DefsDownloader.get().downloadSnippets(true);
+            await DefsDownloader.get().updateSnippets(true);
+        },
+    );
+    context.subscriptions.push(commandUpdateSnippets);
 }
