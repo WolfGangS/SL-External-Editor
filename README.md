@@ -3,6 +3,8 @@
 This Extension is designed to integrate vscode better as the external editor for
 Second Life
 
+### [Get it here](https://marketplace.visualstudio.com/items?itemName=wlf-io.sl-external-editor)
+
 ## Setup
 
 I suggest that you chose a folder on your system to hold all your sl projects,
