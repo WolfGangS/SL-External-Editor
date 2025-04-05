@@ -181,6 +181,7 @@ This extension has the following settings:
 
 ### 0.2
 
+- `0.2.4` Fix escaping bug in preproc path
 - `0.2.2` Add command to download and install pre-processor
 - `0.2.1` Add Preproc out file support
 - `0.2.0` Add Preproc support and fix major save bug
