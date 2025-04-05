@@ -2,6 +2,7 @@ import { OutputHandle } from "./output";
 import * as vscode from "vscode";
 import { TempWatcher, WatchedFile } from "./tempWatcher";
 import { isPreProcConfigured, runPreProc } from "./preProcRunner";
+import { Config, getConfig } from "./config";
 
 export class SaveProcess implements vscode.Disposable {
     private static instance: SaveProcess | null = null;
@@ -74,6 +75,7 @@ export class SaveProcess implements vscode.Disposable {
     }
 
     private async saveIncludeFile(tempFile: WatchedFile) {
+        if (!getConfig<boolean>(Config.PreProcWatchIncludes)) return;
         if (tempFile.rootFile) {
             await this.saveDataToTempFile(tempFile.rootFile, tempFile);
         } else {

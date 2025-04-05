@@ -67,6 +67,8 @@ using directory and name to match
   (optional)
 - Any Second Life viewer that has the `ExternalEditor` feature
 - Automatic type definition downloading for `SLua`
+- External Pre processing tools - Example available soon!
+- Attempting to open project directories automatically
 
 ### Commands
 
@@ -144,20 +146,19 @@ This extension contributes the following settings:
   - `secondLifeExternalEditor.selene.download` The location to download a selene
     standard library definition from
 - _**Not yet implemented**_
-  - `secondLifeExternalEditor.preprocessor.command.lsl`: _**NOT IMPLMENETED**_
-    The command to execute as a preprocessor step to affect the output before it
-    is put into the viewers temp file for lsl scripts
-  - `secondLifeExternalEditor.preprocessor.command.slua`: _**NOT IMPLMENETED**_
-    The command to execute as a preprocessor step to affect the output before it
-    is put into the viewers temp file for slua scripts
-  - `secondLifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
-    If the preprocessor outputs compatible information about extra files it
-    included, then the extension will watch for those files changing as well
+  - `secondLifeExternalEditor.preprocessor.command.lsl`: The command to execute
+    as a preprocessor step to affect the output before it is put into the
+    viewers temp file for lsl scripts
+  - `secondLifeExternalEditor.preprocessor.command.slua`: The command to execute
+    as a preprocessor step to affect the output before it is put into the
+    viewers temp file for SLua scripts
+  - `secondLifeExternalEditor.preprocessor.watchIncludes`: If the preprocessor
+    outputs compatible information about extra files it included, then the
+    extension will watch for those files changing as well
 
 ## Planned Features
 
-- Integration with external preprocessing tools.
-- Automatic opening to relevant directory if possible
+- Updates
 
 ## Known Issues
 
@@ -167,7 +168,8 @@ This extension contributes the following settings:
 
 ### 0.2
 
-- `0.2.0` Add preproc support and fix major save bug
+- `0.2.1` Add Preproc out file support
+- `0.2.0` Add Preproc support and fix major save bug
 
 ### 0.1
 

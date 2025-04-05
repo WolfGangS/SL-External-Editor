@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
-import { getLanguageForFileExtension, Language } from "./tempWatcher";
+import {
+    getLanguageForFileExtension,
+    getTempDir,
+    Language,
+} from "./tempWatcher";
 import { Config, getConfig } from "./config";
 import { getOutput } from "./extension";
 import { OutputHandle } from "./output";
@@ -38,7 +42,7 @@ export async function runPreProc(
     output.appendLine("Run command: " + cmd);
 
     const result = await exec(cmd);
-    const decoded = decodeResponse(result.stdout);
+    const decoded = await decodeResponse(result.stdout, out);
     if (typeof decoded == "string") {
         return {
             text: decoded,
@@ -50,8 +54,15 @@ export async function runPreProc(
     }
 }
 
-function decodeResponse(stdout: string): string | PreProcResponse {
+async function decodeResponse(
+    stdout: string,
+    out: vscode.Uri | false,
+): Promise<string | PreProcResponse> {
     try {
+        if (out) {
+            const data = await vscode.workspace.fs.readFile(out);
+            stdout = new TextDecoder().decode(data);
+        }
         const json = JSON.parse(stdout);
         if (isPreProcResponse(json)) {
             return json;
@@ -66,14 +77,17 @@ function prepCmd(
     uri: vscode.Uri,
     lang: Language,
     wf: vscode.Uri,
-): [string, string | false] {
-    let out: string | false = false;
+): [string, vscode.Uri | false] {
+    let out: vscode.Uri | false = false;
     cmd = cmd.replaceAll("%script%", uri.path);
     cmd = cmd.replaceAll("%lang%", lang.toLowerCase());
     cmd = cmd.replaceAll("%root%", wf.path);
     if (cmd.includes("%out%")) {
-        out = `/tmp/${Date.now()}-output-${path.basename(uri.path)}`;
-        cmd = cmd.replaceAll("%out%", out);
+        out = vscode.Uri.joinPath(
+            getTempDir(),
+            `${Date.now()}-output-${path.basename(uri.path)}`,
+        );
+        cmd = cmd.replaceAll("%out%", out.path);
     }
     return [cmd, out];
 }
