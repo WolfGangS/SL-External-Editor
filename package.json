@@ -3,7 +3,7 @@
   "displayName": "SL External Editor",
   "publisher": "wlf-io",
   "description": "Integrate vs code with the Second Life client external editor feature",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WolfGangS/SL-External-Editor.git"
@@ -44,6 +44,10 @@
       {
         "command": "sl-external-editor.runPreProc",
         "title": "SL External Editor: Run preprocessor"
+      },
+      {
+        "command": "sl-external-editor.installPreProc",
+        "title": "SL External Editor: Install PreProc"
       }
     ],
     "configuration": {
@@ -94,9 +98,15 @@
           "scope": "window"
         },
         "secondLifeExternalEditor.preprocessor.watchIncludes": {
-          "markdownDescription": "**NOT IMPLEMENTED YET**: Wether the extension should monitor included files via #include, or preprocessor file list output",
+          "markdownDescription": "Wether the extension should monitor included files via #include, or preprocessor file list output",
           "type": "boolean",
           "default": true,
+          "scope": "resource"
+        },
+        "secondLifeExternalEditor.preprocessor.download": {
+          "markdownDescription": "Url to download preproc from.\n\nIf not specified and the command is run, it will download the [default dsl option](https://github.com/WolfGangS/DSL-PreProc)`",
+          "type": "string",
+          "default": "",
           "scope": "resource"
         },
         "secondLifeExternalEditor.preprocessor.command.lsl": {

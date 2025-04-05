@@ -41,7 +41,7 @@ export async function runPreProc(
 
     output.appendLine("Run command: " + cmd);
 
-    const result = await exec(cmd);
+    const result = await runCmd(cmd);
     const decoded = await decodeResponse(result.stdout, out);
     if (typeof decoded == "string") {
         return {
@@ -150,4 +150,10 @@ function isStringArray(array: unknown[]): array is string[] {
         if (typeof u !== "string") return false;
     }
     return true;
+}
+
+export async function runCmd(
+    cmd: string,
+): Promise<child_process.PromiseWithChild<{ stderr: string; stdout: string }>> {
+    return await exec(cmd);
 }
