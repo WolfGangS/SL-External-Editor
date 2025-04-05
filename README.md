@@ -67,7 +67,8 @@ using directory and name to match
   (optional)
 - Any Second Life viewer that has the `ExternalEditor` feature
 - Automatic type definition downloading for `SLua`
-- External Pre processing tools - Example available soon!
+- External Pre processing tools -
+  [See here for documentation](https://github.com/WolfGangS/SL-External-Editor/blob/master/README.md)
 - Attempting to open project directories automatically
 
 ### Commands
