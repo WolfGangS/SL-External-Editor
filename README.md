@@ -35,7 +35,7 @@ config options below, and trying the hint system.
 
 ### Free wheeling it
 
-This way works best if you open vscode before you start working in sl
+This way works best if you open vscode before you start working in SL
 
 Set the external editor config in the viewer to something like this..
 
@@ -144,9 +144,12 @@ This extension contributes the following settings:
   - `secondLifeExternalEditor.selene.download` The location to download a selene
     standard library definition from
 - _**Not yet implemented**_
-  - `secondLifeExternalEditor.preprocessor.command`: _**NOT IMPLMENETED**_ The
-    command to execute as a preprocessor step to affect the output before it is
-    put into the viewers temp file
+  - `secondLifeExternalEditor.preprocessor.command.lsl`: _**NOT IMPLMENETED**_
+    The command to execute as a preprocessor step to affect the output before it
+    is put into the viewers temp file for lsl scripts
+  - `secondLifeExternalEditor.preprocessor.command.slua`: _**NOT IMPLMENETED**_
+    The command to execute as a preprocessor step to affect the output before it
+    is put into the viewers temp file for slua scripts
   - `secondLifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
     If the preprocessor outputs compatible information about extra files it
     included, then the extension will watch for those files changing as well
@@ -161,6 +164,10 @@ This extension contributes the following settings:
 - It's not finished
 
 ## Release Notes
+
+### 0.2
+
+- `0.2.0` Add preproc support and fix major save bug
 
 ### 0.1
 

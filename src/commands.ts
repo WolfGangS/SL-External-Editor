@@ -2,6 +2,9 @@ import * as vscode from "vscode";
 import { OutputHandle } from "./output";
 import { DefsDownloader } from "./defsDownloader";
 import path from "path";
+import { getOutput } from "./extension";
+import { runPreProc } from "./preProcRunner";
+import { getVscodeLangFromLanguage, Language } from "./tempWatcher";
 
 enum Commands {
     Enable = "sl-external-editor.enable",
@@ -9,15 +12,15 @@ enum Commands {
     SetupSelene = "sl-external-editor.setupSelene",
     UpdateAll = "sl-external-editor.updateAll",
     UpdateSnippets = "sl-external-editor.updateSnippets",
+    RunPreproc = "sl-external-editor.runPreProc",
 }
 
 export function setupCommands(
     output: OutputHandle,
     context: vscode.ExtensionContext,
 ) {
-    const commandEnable = vscode.commands.registerCommand(
-        Commands.Enable,
-        async () => {
+    const commands: { [key in Commands]: () => void | Promise<void> } = {
+        [Commands.Enable]: async function (): Promise<void> {
             output.appendLine("Enable command");
             vscode.window.showInformationMessage(
                 "SL External Editor Enabled for workspace",
@@ -31,12 +34,7 @@ export function setupCommands(
                 await DefsDownloader.get().updateSnippets();
             }
         },
-    );
-    context.subscriptions.push(commandEnable);
-
-    const commandUpdateLSP = vscode.commands.registerCommand(
-        Commands.UpdateLSP,
-        async () => {
+        [Commands.UpdateLSP]: async function (): Promise<void> {
             output.appendLine("Update LSP");
             await DefsDownloader.get().downloadLSPData(true);
             await DefsDownloader.get().updateLuauLSPConfig(true);
@@ -44,12 +42,7 @@ export function setupCommands(
                 "LUAU LSP Confgi updated",
             );
         },
-    );
-    context.subscriptions.push(commandUpdateLSP);
-
-    const commandSetupSlene = vscode.commands.registerCommand(
-        Commands.SetupSelene,
-        async () => {
+        [Commands.SetupSelene]: async function (): Promise<void> {
             output.appendLine("Selene Setup");
             const dl = await DefsDownloader.get().downloadSelene(true);
             const sel = await DefsDownloader.get().getDownloadedSelene();
@@ -65,26 +58,71 @@ export function setupCommands(
                 );
             }
         },
-    );
-    context.subscriptions.push(commandSetupSlene);
-
-    const commandUpdateAll = vscode.commands.registerCommand(
-        Commands.UpdateAll,
-        async () => {
+        [Commands.UpdateAll]: async function (): Promise<void> {
             await DefsDownloader.get().download(true);
             await DefsDownloader.get().updateLuauLSPConfig(true);
             await DefsDownloader.get().updateSeleneConfig(true);
             await DefsDownloader.get().updateSnippets(true);
         },
-    );
-    context.subscriptions.push(commandUpdateAll);
-
-    const commandUpdateSnippets = vscode.commands.registerCommand(
-        Commands.UpdateSnippets,
-        async () => {
+        [Commands.UpdateSnippets]: async function (): Promise<void> {
             await DefsDownloader.get().downloadSnippets(true);
             await DefsDownloader.get().updateSnippets(true);
         },
-    );
-    context.subscriptions.push(commandUpdateSnippets);
+        [Commands.RunPreproc]: async function (): Promise<void> {
+            if (!vscode.workspace.workspaceFolders) {
+                vscode.window.showWarningMessage(
+                    "VSCode is not open in a directory",
+                );
+                return;
+            }
+
+            const wf = vscode.workspace.workspaceFolders[0].uri;
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showWarningMessage(
+                    "No active document",
+                );
+                return;
+            }
+            const output = getOutput("Exec");
+            if (!output) {
+                vscode.window.showErrorMessage("Cannot hook output");
+                return;
+            }
+            const doc = editor.document;
+            output.appendLine(doc.uri.path);
+
+            try {
+                const result = await runPreProc(doc.uri);
+                if (result) {
+                    const lang = getVscodeLangFromLanguage(result.language);
+                    const newDoc = await vscode.workspace.openTextDocument({
+                        language: lang,
+                        content: result.text,
+                    });
+                    vscode.window.showTextDocument(newDoc, {
+                        preview: true,
+                    });
+                } else {
+                    vscode.window.showErrorMessage(
+                        "Preproc failed to run, check output",
+                    );
+                }
+            } catch (e) {
+                vscode.window.showErrorMessage(
+                    "Preproc failed to run, check output",
+                );
+                output.appendLine(`FAILED\n${e}`);
+            }
+        },
+    };
+
+    for (const [cmd, func] of Object.entries(commands)) {
+        context.subscriptions.push(
+            vscode.commands.registerCommand(
+                cmd,
+                func,
+            ),
+        );
+    }
 }

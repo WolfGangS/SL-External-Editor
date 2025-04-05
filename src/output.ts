@@ -45,3 +45,13 @@ export class Output implements vscode.Disposable {
         this.output.dispose();
     }
 }
+
+export function stubOutput(): OutputHandle {
+    return {
+        append: function (txt: string): void {},
+        appendLine: function (txt: string): void {},
+        getHandle: function (prefix: string): OutputHandle {
+            return stubOutput();
+        },
+    };
+}

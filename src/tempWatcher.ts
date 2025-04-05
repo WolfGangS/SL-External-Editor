@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import os from "os";
 import path from "path";
-import { OutputHandle } from "./output";
+import { OutputHandle, stubOutput } from "./output";
 import { Config, getConfig } from "./config";
 import { cleanPathString } from "./util";
 
@@ -11,6 +11,17 @@ export enum Language {
     None = "None",
     LSL = "LSL",
     SLua = "SLua",
+}
+
+export function getVscodeLangFromLanguage(lang: Language) {
+    switch (lang) {
+        case Language.LSL:
+            return "lsl";
+        case Language.SLua:
+            return "luau";
+        default:
+            return;
+    }
 }
 
 export type WatchedFile = {
@@ -23,7 +34,7 @@ export type WatchedFile = {
     comment: string;
     hintPrefix: string;
     includedFiles: string[];
-    rootFile: string;
+    rootFile: vscode.Uri | null;
     multiMatch: boolean;
 };
 
@@ -38,7 +49,7 @@ function getCommentFormatForLanguage(lang: Language): string {
 }
 
 export function getLanguageForFileExtension(fileExt: string): Language {
-    switch (fileExt.toLowerCase()) {
+    switch ((fileExt.split(".").pop() || "").toLowerCase()) {
         case "lua":
         case "luau":
         case "slua":
@@ -181,7 +192,7 @@ export class TempWatcher implements vscode.Disposable {
             uri: vscode.Uri.joinPath(this.dir, fileName),
             comment: getCommentFormatForLanguage(language),
             hintPrefix: getConfig<string>(Config.HintsPrefix) || "",
-            rootFile: "",
+            rootFile: null,
             includedFiles: [],
             multiMatch: false,
         };
@@ -241,10 +252,10 @@ export class TempWatcher implements vscode.Disposable {
     }
 
     getMatchingTempFiles(
-        filePath: string,
+        fileUri: vscode.Uri,
         relativePath: string,
     ): WatchedFile[] {
-        filePath = filePath.toLowerCase();
+        const filePath = fileUri.path.toLowerCase();
         this.output.appendLine(
             " ========================= TEST ========================= ",
         );
@@ -260,7 +271,11 @@ export class TempWatcher implements vscode.Disposable {
             if (watchedFile.includedFiles.includes(filePath)) {
                 return [watchedFile];
             }
-            if (watchedFile.rootFile == filePath) return [watchedFile];
+            if (watchedFile.rootFile) {
+                if (watchedFile.rootFile.path.toLowerCase() == filePath) {
+                    return [watchedFile];
+                }
+            }
             if (
                 this.fileNameMatchesWatchedFile(
                     watchedFile,
@@ -274,7 +289,7 @@ export class TempWatcher implements vscode.Disposable {
             }
         }
         if (matches.length == 1) {
-            matches[0].rootFile = filePath;
+            matches[0].rootFile = fileUri;
         }
         return matches;
     }
@@ -284,7 +299,31 @@ export class TempWatcher implements vscode.Disposable {
         return this.watched[base] || null;
     }
 
+    silentFileNameMatchesWatchedFile(
+        file: WatchedFile,
+        filePath: string,
+        relativePath: string,
+    ): boolean {
+        const output = this.output;
+        this.output = stubOutput();
+        const result = this.runFileNameMatchesWatchedFile(
+            file,
+            filePath,
+            relativePath,
+        );
+        this.output = output;
+        return result;
+    }
+
     fileNameMatchesWatchedFile(
+        file: WatchedFile,
+        filePath: string,
+        relativePath: string,
+    ): boolean {
+        return this.runFileNameMatchesWatchedFile(file, filePath, relativePath);
+    }
+
+    private runFileNameMatchesWatchedFile(
         file: WatchedFile,
         filePath: string,
         relativePath: string,
