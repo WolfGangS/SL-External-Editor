@@ -83,7 +83,7 @@ function getFileExtensions(): string[] {
         .map((s) => s.toLowerCase());
 }
 
-function getTempDir(): vscode.Uri {
+export function getTempDir(): vscode.Uri {
     if (temp_dir) return vscode.Uri.file(temp_dir);
     switch (os.platform()) {
         case "win32":
