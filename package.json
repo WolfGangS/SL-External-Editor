@@ -27,50 +27,51 @@
     "configuration": {
       "title": "SL External Editor",
       "properties": {
-        "sl-ext.enabled": {
+        "secondlifeExternalEditor.enabled": {
           "description": "Wether the extension should be enabled.\nReconmend setting this in workspace rather than globally",
           "type": "boolean",
           "default": false,
           "score": "window"
         },
-        "sl-ext.dir.projects": {
+        "secondlifeExternalEditor.dir.projects": {
           "description": "The directory path the extension will use to look for projects to automatically open for",
           "type": "string",
           "default": "~/projects/sl",
           "scope": "machine"
         },
-        "sl-ext.hints.prefix": {
+        "secondlifeExternalEditor.hints.prefix": {
           "markdownDescription": "The prefix character after a comment that the extension will use to look for hints as to how to handle the file\n\ne.g. `--@project <project_name>`\nSuported Hints\n|Hint|Description|\n|----|----|\n|`project`|The folder in the projects dir to look in|\n|`path`|The path on the system to look in, (overrides project)|\n|`file`|The file in project or path to link to|",
           "type": "string",
           "default": "@",
           "scope": "machine"
         },
-        "sl-ext.watcher.tempFilesRequireDirectoryPrefix": {
+        "secondlifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix": {
           "markdownDescription": "Wether the the script must start with the direcotry name before the file name\ne.g. Script in folder `project_name/main.luau` will require the script in sl to be named like `project_name main` or `project_name/main`\nThis can be bypassed with hints",
           "type": "boolean",
           "default": false,
           "scope": "window"
         },
-        "sl-ext.watcher.fileExtensions": {
+        "secondlifeExternalEditor.watcher.fileExtensions": {
           "description": "What file extensions should the be monitored for",
           "type": "array",
           "default": [
             "lsl",
             "luau",
-            "lua"
+            "lua",
+            "slua"
           ],
           "items": {
             "type": "string"
           },
-          "scope": "resource"
+          "scope": "machine"
         },
-        "sl-ext.preprocessor.watchIncludes": {
+        "secondlifeExternalEditor.preprocessor.watchIncludes": {
           "markdownDescription": "**NOT IMPLEMENTED YET**: Wether the extension should monitor included files via #include, or preprocessor file list output",
           "type": "boolean",
           "default": true,
           "scope": "resource"
         },
-        "sl-ext.preprocessor.command": {
+        "secondlifeExternalEditor.preprocessor.command": {
           "markdownDescription": "**NOT IMPLEMENTED YET**: Command to execute as a preprocessor when files change, the output of this will be put into the temp file the viewer created\n\nSupports the following replacements\n\n|Replacement|Description|\n|----|----|\n|`%script%`|The path of the file for the preprocessor to start on|\n|`%lang%`|The language that the extension believes the script is|\n\ne.g. `python ~/sl/LSL-PyOptimizer/main.py --bom %script%`",
           "type": "string",
           "default": "",

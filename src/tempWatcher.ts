@@ -107,6 +107,7 @@ export class TempWatcher implements vscode.Disposable {
             clearInterval(this.interval);
             this.interval = null;
         }
+        this.watched = {};
         return this;
     }
     private watch() {
