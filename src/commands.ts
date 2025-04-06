@@ -153,11 +153,11 @@ export function setupCommands(
             );
             vscode.workspace.getConfiguration().update(
                 Config.PreProcCommandSLua,
-                file.path + " " + url[1],
+                `"${file.path}" ${url[1]}`,
             );
             vscode.workspace.getConfiguration().update(
                 Config.PreProcCommandLSL,
-                file.path + " " + url[1],
+                `"${file.path}" ${url[1]}`,
             );
             if (os.platform() == "linux") {
                 try {
