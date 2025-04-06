@@ -127,6 +127,8 @@ This extension contributes the following settings:
 
 ### 0.0
 
+- `0.0.6` Setup publisher
+- `0.0.5` Fix version issue
 - `0.0.4` Implement Automatic type def downloads
 - `0.0.3` Mac temp directory detection
 - `0.0.2` Windows file path fixes
