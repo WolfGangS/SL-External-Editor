@@ -24,9 +24,24 @@ export function getVscodeLangFromLanguage(lang: Language) {
     }
 }
 
-export type WatchedFile = {
+type HookSet<T> = { [k: string]: Hook<T> };
+class Hook<T> implements vscode.Disposable {
+    dispose: () => void;
+    cb: (e: T) => void;
+    constructor(cb: (e: T) => void, dispose: () => void) {
+        this.cb = cb;
+        this.dispose = dispose;
+    }
+
+    trigger(e: T) {
+        this.cb(e);
+    }
+}
+
+export interface WatchedFile {
     ext: string;
     fileName: string;
+    nameWithoutExt: string;
     scriptName: string;
     hints: WatchedFileHints;
     language: Language;
@@ -36,7 +51,10 @@ export type WatchedFile = {
     includedFiles: string[];
     rootFile: vscode.Uri | null;
     multiMatch: boolean;
-};
+    logFile: WatchedFile | null;
+    codeFile: WatchedFile | null;
+    isLog: boolean;
+}
 
 function getCommentFormatForLanguage(lang: Language): string {
     switch (lang) {
@@ -79,10 +97,8 @@ export function setTempDirFromFile(file: string) {
 }
 
 function getFileExtensions(): string[] {
-    const exts = (getConfig<string[]>(Config.WatcherFileExtensions) || [])
+    return (getConfig<string[]>(Config.WatcherFileExtensions) || [])
         .map((s) => s.toLowerCase());
-    if (!exts.includes("log")) exts.push("log");
-    return exts;
 }
 
 export function getTempDir(): vscode.Uri {
@@ -102,14 +118,26 @@ export function getTempDir(): vscode.Uri {
     }
 }
 
+type TempWatcherHandles = {
+    delete: HookSet<WatchedFile>;
+    create: HookSet<WatchedFile>;
+    change: HookSet<WatchedFile>;
+};
+
 export class TempWatcher implements vscode.Disposable {
     private static instance: TempWatcher | null = null;
     private dir: vscode.Uri;
     private interval: NodeJS.Timeout | null = null;
     private watched: { [k: string]: WatchedFile } = {};
     private output: OutputHandle;
-    private createHandles: { [k: string]: (file: WatchedFile) => void } = {};
-    private deleteHandles: { [k: string]: (file: WatchedFile) => void } = {};
+
+    private handles: TempWatcherHandles = {
+        delete: {},
+        create: {},
+        change: {},
+    };
+
+    private watcher: vscode.FileSystemWatcher | null = null;
     private constructor(dir: vscode.Uri, output: OutputHandle) {
         this.dir = dir;
         this.output = output;
@@ -130,129 +158,91 @@ export class TempWatcher implements vscode.Disposable {
         else this.stop();
     }
     start(): this {
+        this.stop();
         this.output.appendLine(`Watching '${this.dir}'`);
-        this.interval = setInterval(() => this.watch(), 1000);
+        // this.interval = setInterval(() => this.watch(), 1000);
+        const glob = new vscode.RelativePattern(this.dir, "sl_script_*");
+        this.watcher = vscode.workspace.createFileSystemWatcher(
+            glob,
+            false,
+            false,
+            false,
+        );
+        this.watcher.onDidCreate((e) => this.didCreate(e));
+        this.watcher.onDidChange((e) => this.didChange(e));
+        this.watcher.onDidDelete((e) => this.didDelete(e));
+        this.init();
         return this;
     }
+
+    private async didCreate(uri: vscode.Uri) {
+        const exts = getFileExtensions();
+        const rgx = new RegExp(
+            `^sl_script_(.+)_([a-f0-9]{32}|[a-f0-9-]{36})\.(${
+                exts.join("|")
+            })(.log)?$`,
+            "gi",
+        );
+        const name = path.basename(uri.path);
+        this.output.appendLine("NEW FILE: " + name + "\n" + rgx.source);
+        if (!name.match(rgx)) return;
+
+        const file = new TempFile(uri);
+        if (file.ext == "log") {
+            file.codeFile = this.getWatchedFileByName(file.nameWithoutExt);
+            if (file.codeFile) file.codeFile.logFile = file;
+        } else {
+            file.logFile = this.getWatchedFileByName(
+                `${file.nameWithoutExt}.log`,
+            );
+            if (file.logFile) file.logFile.codeFile = file;
+            await file.readHints();
+        }
+        this.watched[file.fileName] = file;
+        this.callHooks("create", file);
+    }
+
+    private async didChange(uri: vscode.Uri) {
+        const file = this.getWatchedFileForFileUri(uri);
+        if (!file) return;
+        this.callHooks("change", file);
+    }
+
+    private async didDelete(uri: vscode.Uri) {
+        const file = this.getWatchedFileForFileUri(uri);
+        if (!file) return;
+        this.callHooks("delete", file);
+        if (file.logFile) {
+            delete this.watched[file.logFile.fileName];
+        } else if (file.codeFile) {
+            file.codeFile.logFile = null;
+        }
+        delete this.watched[file.fileName];
+    }
+
     stop(): this {
         if (this.interval) {
             this.output.appendLine("Stopped");
             clearInterval(this.interval);
             this.interval = null;
         }
+        if (this.watcher) {
+            this.watcher.dispose();
+            this.watcher = null;
+        }
         this.watched = {};
         return this;
     }
-    private watch() {
+
+    init() {
         vscode.workspace.fs.readDirectory(this.dir)
             .then((entries) => {
-                const scripts: string[] = [];
-                for (const entry of entries) {
-                    const name = entry[0];
-                    const type = entry[1];
+                for (const [name, type] of entries) {
                     if (type != vscode.FileType.File) continue;
                     if (!name.startsWith("sl_script_")) continue;
-                    scripts.push(name);
-                    if (this.watched[name]) continue;
-
-                    const ext = (name.split(".").pop() || "").toLowerCase();
-                    const fileExts = getFileExtensions();
-                    if (fileExts.includes(ext)) {
-                        const file = this.createFile(name);
-                        if (file.ext == "log") {
-                        } else if (file.comment && file.hintPrefix) {
-                            this.readHintsAndNotify(file);
-                        } else {
-                            this.fileCreated(file);
-                        }
-                    } else {
-                        this.output.appendLine(
-                            "Ignore: " + name + " not in extension array",
-                        );
-                    }
-                }
-                for (const file in this.watched) {
-                    if (!scripts.includes(file)) {
-                        this.fileDeleted(this.watched[file]);
-                    }
+                    this.didCreate(vscode.Uri.joinPath(this.dir, name));
                 }
             });
-    }
-
-    private createFile(fileName: string): WatchedFile {
-        const ext = (fileName.split(".").pop() || "").toLowerCase();
-        const parts = fileName.split("_");
-        parts.pop();
-        parts.shift();
-        parts.shift();
-        const scriptName = parts.join("_").toLowerCase();
-        const language = getLanguageForFileExtension(ext);
-        return {
-            fileName,
-            language,
-            ext,
-            scriptName,
-            hints: {},
-            uri: vscode.Uri.joinPath(this.dir, fileName),
-            comment: getCommentFormatForLanguage(language),
-            hintPrefix: getConfig<string>(Config.HintsPrefix) || "",
-            rootFile: null,
-            includedFiles: [],
-            multiMatch: false,
-        };
-    }
-
-    private fileDeleted(file: WatchedFile) {
-        this.output.appendLine(`Delete: '${file.fileName}'`);
-        for (const handle in this.deleteHandles) {
-            this.deleteHandles[handle](file);
-        }
-        delete this.watched[file.fileName];
-    }
-
-    private readHintsAndNotify(file: WatchedFile) {
-        vscode.workspace.fs.readFile(
-            vscode.Uri.joinPath(this.dir, file.fileName),
-        )
-            .then((data) => {
-                const text = new TextDecoder().decode(data)
-                    .split(
-                        "\n",
-                    );
-                const hints: WatchedFileHints = {};
-                for (const line of text) {
-                    let trimmed = line.trim();
-                    if (trimmed.length < 1) continue;
-                    if (!trimmed.startsWith(file.comment)) continue;
-                    trimmed = trimmed.substring(file.comment.length).trim();
-                    if (!trimmed.startsWith(file.hintPrefix)) continue;
-                    trimmed = trimmed.substring(file.hintPrefix.length).trim();
-                    const parts = trimmed.split(" ");
-                    const hint = parts.shift()?.toLowerCase();
-                    trimmed = parts.join(" ").trim();
-                    if (hint) {
-                        hints[hint] = trimmed.toLowerCase();
-                    }
-                }
-                file.hints = hints;
-                if (hints["file"]) {
-                    hints["file"] = cleanPathString(hints["file"]);
-                    file.scriptName = hints["file"];
-                }
-                if (hints["project"]) {
-                    hints["project"] = cleanPathString(hints["project"]);
-                }
-                this.fileCreated(file);
-            });
-    }
-
-    private fileCreated(file: WatchedFile) {
-        this.watched[file.fileName] = file;
-        this.output.appendLine(`Create: '${file.fileName}'`);
-        this.output.appendLine(JSON.stringify(file.hints));
-        for (const handle in this.createHandles) {
-            this.createHandles[handle](file);
-        }
     }
 
     getMatchingTempFiles(
@@ -299,8 +289,11 @@ export class TempWatcher implements vscode.Disposable {
     }
 
     getWatchedFileForFileUri(fileUri: vscode.Uri): WatchedFile | null {
-        const base = path.basename(fileUri.path);
-        return this.watched[base] || null;
+        return this.getWatchedFileByName(path.basename(fileUri.path));
+    }
+
+    private getWatchedFileByName(name: string) {
+        return this.watched[name] || null;
     }
 
     silentFileNameMatchesWatchedFile(
@@ -474,25 +467,130 @@ export class TempWatcher implements vscode.Disposable {
 
     dispose() {
         this.stop();
+        this.handles = {
+            delete: {},
+            change: {},
+            create: {},
+        };
     }
-    hookFileCreate(handleName: string, cb: (file: WatchedFile) => void) {
-        this.createHandles[handleName] = cb;
+
+    onDidCreate(cb: (file: WatchedFile) => {}): Hook<WatchedFile> {
+        return this.setupHook("create", cb);
     }
-    unhookFileCreate(handleName: string): boolean {
-        if (this.createHandles[handleName]) {
-            delete this.createHandles[handleName];
-            return true;
+
+    onDidChange(cb: (file: WatchedFile) => {}): Hook<WatchedFile> {
+        return this.setupHook("change", cb);
+    }
+
+    onDidDelete(cb: (file: WatchedFile) => {}): Hook<WatchedFile> {
+        return this.setupHook("delete", cb);
+    }
+
+    private setupHook(
+        type: keyof TempWatcherHandles,
+        cb: (file: WatchedFile) => void,
+    ): Hook<WatchedFile> {
+        let k = `${Date.now()}-${Math.random()}`;
+        while (this.handles[type][k]) k = `${Date.now()}-${Math.random()}`;
+        this.handles[type][k] = new Hook(cb, () => {
+            delete this.handles[type][k];
+        });
+        return this.handles[type][k];
+    }
+
+    private callHooks(type: keyof TempWatcherHandles, file: WatchedFile) {
+        this.output.appendLine(`${type}: '${file.fileName}'`);
+        for (const k in this.handles[type]) {
+            this.handles[type][k].trigger(file);
         }
-        return false;
     }
-    hookFileDelete(handleName: string, cb: (file: WatchedFile) => void) {
-        this.deleteHandles[handleName] = cb;
+}
+
+export class TempFile implements WatchedFile {
+    ext: string;
+    fileName: string;
+    nameWithoutExt: string;
+    scriptName: string;
+    hints: WatchedFileHints = {};
+    language: Language;
+    uri: vscode.Uri;
+    comment: string;
+    hintPrefix: string;
+    includedFiles: string[] = [];
+    rootFile: vscode.Uri | null = null;
+    multiMatch: boolean = false;
+    _logFile: WatchedFile | null = null;
+    _codeFile: WatchedFile | null = null;
+
+    constructor(uri: vscode.Uri) {
+        const fileName = path.basename(uri.path);
+        const nameParts = fileName.split(".");
+        this.ext = (nameParts.pop() || "").toLowerCase();
+        this.nameWithoutExt = nameParts.join(".");
+        const parts = fileName.split("_");
+        parts.pop();
+        parts.shift();
+        parts.shift();
+        this.scriptName = parts.join("_").toLowerCase();
+        this.fileName = fileName;
+        this.language = getLanguageForFileExtension(this.ext);
+        this.uri = uri;
+        this.comment = getCommentFormatForLanguage(this.language);
+        this.hintPrefix = getConfig<string>(Config.HintsPrefix) || "";
     }
-    unhookFileDelete(handleName: string): boolean {
-        if (this.deleteHandles[handleName]) {
-            delete this.deleteHandles[handleName];
-            return true;
+
+    async readHints() {
+        if (!this.comment) return;
+        if (!this.hintPrefix) return;
+        this.hints = {};
+        const data = await vscode.workspace.fs.readFile(this.uri);
+        const text = (new TextDecoder().decode(data)).split("\n");
+        for (const line of text) {
+            let trimmed = line.trim();
+            if (trimmed.length < 1) continue;
+            if (!trimmed.startsWith(this.comment)) continue;
+            trimmed = trimmed.substring(this.comment.length).trim();
+            if (!trimmed.startsWith(this.hintPrefix)) continue;
+            trimmed = trimmed.substring(this.hintPrefix.length).trim();
+            const parts = trimmed.split(" ");
+            const hint = parts.shift()?.toLowerCase();
+            trimmed = parts.join(" ").trim();
+            if (hint) {
+                this.hints[hint] = trimmed.toLowerCase();
+            }
         }
-        return false;
+        if (this.hints["file"]) {
+            this.hints["file"] = cleanPathString(this.hints["file"]);
+            this.scriptName = this.hints["file"];
+        }
+        if (this.hints["project"]) {
+            this.hints["project"] = cleanPathString(this.hints["project"]);
+        }
+    }
+
+    get isLog(): boolean {
+        return this.ext == "log";
+    }
+
+    get logFile(): WatchedFile | null {
+        return this._logFile;
+    }
+
+    set logFile(file: WatchedFile | null) {
+        if (file) {
+            if (this.isLog) throw new Error("Can't set logFile on logFile");
+        }
+        this._logFile = file;
+    }
+
+    get codeFile(): WatchedFile | null {
+        return this._codeFile;
+    }
+
+    set codeFile(file: WatchedFile | null) {
+        if (file) {
+            if (!this.isLog) throw new Error("Can't set codeFile on codeFile");
+        }
+        this._codeFile = file;
     }
 }
