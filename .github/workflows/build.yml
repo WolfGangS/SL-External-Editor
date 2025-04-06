@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - gha/*
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+      - name: Node CI
+        run: npm ci
+      - name: vsce
+        run: npx @vscode/vsce package --out sl-external-editor-dev.vsix
+      - name: Upload Artiface
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: sl-external-editor-dev.vsix
+      - name: vsce Release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: npx @vscode/vsce package
+      - name: Create Release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: sl-external-editor-dev.vsix
