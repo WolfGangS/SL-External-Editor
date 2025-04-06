@@ -87,9 +87,13 @@ This extension contributes the following settings:
 
 - `secondLifeExternalEditor.enabled`: Recommend this is set at a workspace level
   rather than system wide
-- `secondLifeExternalEditor.dir.projects`: _**UNUSED**_ Will be used to open
-  vscode automatically to the right director inside of this specified one, if it
-  can match a file.
+- `secondLifeExternalEditor.dir.projects`: Used to open vscode automatically to
+  the right directory inside of this specified one, if it can match a file.
+  - e.g. `/home/user/projects` `C:\Users\user\projects`
+  - When a new tempfile is passed to vscode if it cannot be matched in the
+    current workspace, the extension will combine this path with the `@project`
+    hint and the (script name or `@file` hint) to try and locate the right place
+    to open
 - `secondLifeExternalEditor.hints.prefix`: The prefix to use to provide hints to
   the extension
 - `secondLifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix`: Sets
