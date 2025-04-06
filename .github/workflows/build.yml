@@ -20,18 +20,19 @@ jobs:
       - name: Node CI
         run: npm ci
       - name: vsce
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: npx @vscode/vsce package --out sl-external-editor-dev.vsix
+      - name: vsce Release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: npx @vscode/vsce package
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: extension
-          path: sl-external-editor-dev.vsix
-      - name: vsce Release
-        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        run: npx @vscode/vsce package
+          path: sl-external-editor-*.vsix
       - name: Create Release
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: sl-external-editor-dev.vsix
+          artifacts: sl-external-editor-*.vsix
