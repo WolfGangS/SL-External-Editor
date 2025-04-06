@@ -20,7 +20,7 @@ export function setupCommands(
             vscode.window.showInformationMessage(
                 "SL External Editor Enabled for workspace",
             );
-            await vscode.workspace.getConfiguration("secondlifeExternalEditor")
+            await vscode.workspace.getConfiguration("secondLifeExternalEditor")
                 .update("enabled", true);
             if (DefsDownloader.enabled()) {
                 await DefsDownloader.get().download();

@@ -3,7 +3,7 @@
   "displayName": "SL External Editor",
   "publisher": "wlf-io",
   "description": "Integrate vs code with the Second Life client external editor feature",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WolfGangS/SL-External-Editor.git"
@@ -36,31 +36,31 @@
     "configuration": {
       "title": "SL External Editor",
       "properties": {
-        "secondlifeExternalEditor.enabled": {
+        "secondLifeExternalEditor.enabled": {
           "description": "Wether the extension should be enabled.\nReconmend setting this in workspace rather than globally",
           "type": "boolean",
           "default": false,
           "score": "window"
         },
-        "secondlifeExternalEditor.dir.projects": {
+        "secondLifeExternalEditor.dir.projects": {
           "description": "The directory path the extension will use to look for projects to automatically open for",
           "type": "string",
           "default": "~/projects/sl",
           "scope": "machine"
         },
-        "secondlifeExternalEditor.hints.prefix": {
+        "secondLifeExternalEditor.hints.prefix": {
           "markdownDescription": "The prefix character after a comment that the extension will use to look for hints as to how to handle the file\n\ne.g. `--@project <project_name>`\nSuported Hints\n|Hint|Description|\n|----|----|\n|`project`|The folder in the projects dir to look in|\n|`path`|The path on the system to look in, (overrides project)|\n|`file`|The file in project or path to link to|",
           "type": "string",
           "default": "@",
           "scope": "machine"
         },
-        "secondlifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix": {
+        "secondLifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix": {
           "markdownDescription": "Wether the the script must start with the direcotry name before the file name\ne.g. Script in folder `project_name/main.luau` will require the script in sl to be named like `project_name main` or `project_name/main`\nThis can be bypassed with hints",
           "type": "boolean",
           "default": false,
           "scope": "window"
         },
-        "secondlifeExternalEditor.watcher.fileExtensions": {
+        "secondLifeExternalEditor.watcher.fileExtensions": {
           "description": "What file extensions should the be monitored for",
           "type": "array",
           "default": [
@@ -74,25 +74,31 @@
           },
           "scope": "machine"
         },
-        "secondlifeExternalEditor.preprocessor.watchIncludes": {
+        "secondLifeExternalEditor.matcher.autoCloseTempScript": {
+          "markdownDescription": "If temporary script files should be automatically closed on finding a match",
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
+        "secondLifeExternalEditor.preprocessor.watchIncludes": {
           "markdownDescription": "**NOT IMPLEMENTED YET**: Wether the extension should monitor included files via #include, or preprocessor file list output",
           "type": "boolean",
           "default": true,
           "scope": "resource"
         },
-        "secondlifeExternalEditor.preprocessor.command": {
+        "secondLifeExternalEditor.preprocessor.command": {
           "markdownDescription": "**NOT IMPLEMENTED YET**: Command to execute as a preprocessor when files change, the output of this will be put into the temp file the viewer created\n\nSupports the following replacements\n\n|Replacement|Description|\n|----|----|\n|`%script%`|The path of the file for the preprocessor to start on|\n|`%out%`|The file to ouput to, if specified extension fill look for writes to that file for the output rather than `std_out`|\n|`%lang%`|The language that the extension believes the script is|\n\ne.g. `python ~/sl/LSL-PyOptimizer/main.py --bom %script%`",
           "type": "string",
           "default": "",
           "scope": "resource"
         },
-        "secondlifeExternalEditor.download": {
+        "secondLifeExternalEditor.download": {
           "markdownDescription": "Wether extension should download SLua Type Defs",
           "type": "boolean",
           "default": true,
           "scope": "machine"
         },
-        "secondlifeExternalEditor.download.location": {
+        "secondLifeExternalEditor.download.location": {
           "markdownDescription": "Where downloaded definition files should be put for your projectm (selene cannot be global, and will default to root)",
           "type": "string",
           "enum": [ "global", "root", "vscode", "types" ],
@@ -106,7 +112,7 @@
           "default": ".types",
           "scope": "window"
         },
-        "secondlifeExternalEditor.luau-lsp.downloadTypeDefs": {
+        "secondLifeExternalEditor.luau-lsp.downloadTypeDefs": {
           "markdownDescription": "Url's to download SLua type definition files for the luau-lsp from.",
           "type": "array",
           "default": [
@@ -114,7 +120,7 @@
           ],
           "scope": "machine"
         },
-        "secondlifeExternalEditor.luau-lsp.downloadApiDocs": {
+        "secondLifeExternalEditor.luau-lsp.downloadApiDocs": {
           "markdownDescription": "Url's to download SLua documentation files for the luau-lsp from.",
           "type": "array",
           "default": [
@@ -122,7 +128,7 @@
           ],
           "scope": "machine"
         },
-        "secondlifeExternalEditor.selene.download": {
+        "secondLifeExternalEditor.selene.download": {
           "markdownDescription": "Url's to download SLua Selene Standard Library files from",
           "type": "string",
           "default": "https://slua.wlf.io/dist/sl_selene_defs.yml",
