@@ -1,9 +1,9 @@
 # SL External Editor
 
+<img src="icon.svg" height="150px" align="right">
+
 This Extension is designed to integrate vscode better as the external editor for
 Second Life
-
-<img src="icon.svg" height="150px" style="position:absolute; top:10px;right:10px">
 
 <sub>This project is not associated with [Linden Lab](https://lindenlab.com/)
 any use of trademarks or copyrighted terms is done in good faith to explain
