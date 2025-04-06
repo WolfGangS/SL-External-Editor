@@ -19,6 +19,15 @@ using directory and name to match
 - [Selene](https://marketplace.visualstudio.com/items?itemName=Kampfkarren.selene-vscode)
   (optional)
 - Any Second Life viewer that has the `ExternalEditor` feature
+- Automatic type definition downloading for `SLua`
+
+### Commands
+
+- `SL External Editor: Enable` - Enable The extension for the current directory
+- `SL External Editor: Update LSP Defs` - Force an update and refresh of the LSP
+  Defs
+- `SL External Editor: Setup/Update Selene` - Force an update and refresh of the
+  Selene Library
 
 ### Hints
 
@@ -36,8 +45,8 @@ for LSL, `--` for SLua
     `/home/user/secondlife/huds/space_roleplay/scripts/main.luau`
   - But not one like this
     `/home/user/projects/huds/secondlife/space_roleplay/main.luau`
-  - This hint is also used to try and automatically open the right folder, if
-    the `secondlifeExternalEditor.dir.projects` config option is set.
+  - This hint will also be used to try and automatically open the right folder,
+    if the `secondlifeExternalEditor.dir.projects` config option is set.
 - `@file <file_name>` this will override the default script name detection
   mechanism, it can be combined with `@project` to specify files inside a
   project
@@ -59,8 +68,9 @@ This extension contributes the following settings:
   the extension
 - `secondlifeExternalEditor.watcher.tempFilesRequireDirectoryPrefix`: Sets
   wether scripts need to be named with their folder name as well (this can be
-  disabled, but is recommended to avoid false matches) e.g.
-  `<folder_name>/<file_name>` as the name of your script in sl.
+  disabled, but is recommended to avoid false matches, especially when having
+  multiple projects open at once) e.g. `<folder_name>/<file_name>` as the name
+  of your script in SL.
 - `secondlifeExternalEditor.watcher.fileExtensions`: List of file extensions to
   care about. (Defaults to `lua, luau, lsl, slua`)
 - `secondlifeExternalEditor.download` Wether Type Def files should be
@@ -79,10 +89,13 @@ This extension contributes the following settings:
   or similar
   - `secondlifeExternalEditor.selene.download` The location to download a selene
     standard library definition from
-- `secondlifeExternalEditor.preprocessor.command`: _**NOT IMPLMENETED**_ This is
-  to come
-- `secondlifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
-  This is to come
+- _**Not yet implemented**_
+  - `secondlifeExternalEditor.preprocessor.command`: _**NOT IMPLMENETED**_ The
+    command to execute as a preprocessor step to affect the output before it is
+    put into the viewers temp file
+  - `secondlifeExternalEditor.preprocessor.watchIncludes`: _**NOT IMPLMENETED**_
+    If the preprocessor outputs compatible information about extra files it
+    included, then the extension will watch for those files changing as well
 
 ## Planned Features
 
