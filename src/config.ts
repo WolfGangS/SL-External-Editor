@@ -11,11 +11,13 @@ export enum Config {
     PreProcWatchIncludes =
         "secondLifeExternalEditor.preprocessor.watchIncludes",
     PreProcCommand = "secondLifeExternalEditor.preprocessor.command",
-    Download = "secondLifeExternalEditor.download",
+    Download = "secondLifeExternalEditor.download.enabled",
     DownloadLocation = "secondLifeExternalEditor.download.location",
+    DownloadSnippets = "secondLifeExternalEditor.download.snippets",
     LuauLSPDefs = "secondLifeExternalEditor.luau-lsp.downloadTypeDefs",
     LuauLSPDocs = "secondLifeExternalEditor.luau-lsp.downloadApiDocs",
     SeleneDocs = "secondLifeExternalEditor.selene.download",
+    SeleneToml = "secondLifeExternalEditor.selene.downloadToml",
     AutoCloseTemp = "secondLifeExternalEditor.matcher.autoCloseTempScript",
 }
 
@@ -54,6 +56,8 @@ export class ConfigWatcher implements vscode.Disposable {
         [Config.SeleneDocs]: {},
         [Config.DownloadLocation]: {},
         [Config.AutoCloseTemp]: {},
+        [Config.DownloadSnippets]: {},
+        [Config.SeleneToml]: {},
     };
     private output: OutputHandle;
 

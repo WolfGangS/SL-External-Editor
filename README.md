@@ -16,20 +16,35 @@ clearly what this project is for, and not an attempt to misrepresent</sub>
 I suggest that you chose a folder on your system to hold all your sl projects,
 without better support in the SL viewer directly it is difficult to manage
 multiple, though nothing is stopping you from having as many editors open as you
-like
+like.
 
-Setting the external editor config in the viewer to something like this..
+### Using the "main project folder" setup style
+
+Set the external editor config in the viewer to something like this..
 
 - Windows:
   `"C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code\Code.exe" "C:\Users\<user>\projects\sl\scripts" "%s"`
 - Mac: `/opt/homebrew/bin/code -r "/Users/<user>/projects/sl/scripting" "%s"`
 - Linux: `/usr/bin/code "/home/<user>/projects/sl/scripting" "%s"`
 
-These are not exact examples, your system setup may differ, but should be
-somewhat similar.
+These are not exact examples, your system setup may differ, the location of the
+directory for your scripts is entirely up to you
 
 After that you should be good to go, though I would advise looking through the
 config options below, and trying the hint system.
+
+### Free wheeling it
+
+This way works best if you open vscode before you start working in sl
+
+Set the external editor config in the viewer to something like this..
+
+- Windows:
+  `"C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code\Code.exe" "%s"`
+- Mac: `/opt/homebrew/bin/code "%s"`
+- Linux: `/usr/bin/code "%s"`
+
+These are not exact examples, your system setup may differ.
 
 ## Support
 
@@ -146,6 +161,11 @@ This extension contributes the following settings:
 - It's not finished
 
 ## Release Notes
+
+### 0.1
+
+- `0.1.1` Add snippets and better selene toml handling
+- `0.1.0` Cool icon and "release"
 
 ### 0.0
 

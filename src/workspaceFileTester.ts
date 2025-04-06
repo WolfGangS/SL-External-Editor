@@ -88,11 +88,11 @@ export class WorkspaceFileTester implements vscode.Disposable {
     }
 
     private async newFileOpen(doc: vscode.TextDocument) {
-        this.output.appendLine(`Opened File: ${doc.fileName}`);
+        // this.output.appendLine(`Opened File: ${doc.fileName}`);
         const uri = vscode.Uri.file(doc.fileName);
         const temp = await getTempFileWithPause(uri);
         if (!temp) {
-            this.output.appendLine(`No match for opened file ${doc.fileName}`);
+            // this.output.appendLine(`No match for opened file ${doc.fileName}`);
             return;
         }
         if (!getConfig<boolean>(Config.Enabled)) {

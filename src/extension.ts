@@ -53,14 +53,14 @@ async function setup(context: vscode.ExtensionContext) {
 	mainOutput?.appendLine("Enabled: " + (enabled ? "Yes" : "No"));
 	TempWatcher.Get().setRunning(true);
 	WorkspaceFileTester.Get().setRunning(true);
-	if (enabled && vscode.extensions.getExtension("johnnymorganz.luau-lsp")) {
-		const result = await DefsDownloader.get().download();
-		if (result.lsp) {
-			await DefsDownloader.get().updateLuauLSPConfig(result.lsp);
+
+	if (enabled && DefsDownloader.enabled()) {
+		if (DefsDownloader.get().needsDownload()) {
+			await DefsDownloader.get().download();
 		}
-		if (result.selene) {
-			await DefsDownloader.get().updateSeleneConfig(result.selene);
-		}
+		await DefsDownloader.get().updateLuauLSPConfig();
+		await DefsDownloader.get().updateSeleneConfig();
+		await DefsDownloader.get().updateSnippets();
 	}
 }
 
