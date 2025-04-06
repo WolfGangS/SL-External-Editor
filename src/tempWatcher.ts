@@ -79,8 +79,10 @@ export function setTempDirFromFile(file: string) {
 }
 
 function getFileExtensions(): string[] {
-    return (getConfig<string[]>(Config.WatcherFileExtensions) || [])
+    const exts = (getConfig<string[]>(Config.WatcherFileExtensions) || [])
         .map((s) => s.toLowerCase());
+    if (!exts.includes("log")) exts.push("log");
+    return exts;
 }
 
 export function getTempDir(): vscode.Uri {
@@ -153,10 +155,12 @@ export class TempWatcher implements vscode.Disposable {
                     scripts.push(name);
                     if (this.watched[name]) continue;
 
-                    const file = this.createFile(name);
+                    const ext = (name.split(".").pop() || "").toLowerCase();
                     const fileExts = getFileExtensions();
-                    if (fileExts.includes(file.ext)) {
-                        if (file.comment && file.hintPrefix) {
+                    if (fileExts.includes(ext)) {
+                        const file = this.createFile(name);
+                        if (file.ext == "log") {
+                        } else if (file.comment && file.hintPrefix) {
                             this.readHintsAndNotify(file);
                         } else {
                             this.fileCreated(file);
