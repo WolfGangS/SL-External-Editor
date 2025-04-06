@@ -31,7 +31,10 @@ const cyrb53 = (str: string, seed = 0) => {
     return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
 };
 
-function getFilePathForUrl(url: string, context: vscode.ExtensionContext) {
+export function getFilePathForUrl(
+    url: string,
+    context: vscode.ExtensionContext,
+) {
     const uri = vscode.Uri.parse(url);
     url = uri.toString();
     const base = path.basename(url);

@@ -168,6 +168,7 @@ This extension contributes the following settings:
 
 ### 0.2
 
+- `0.2.2` Add Preproc downloading
 - `0.2.1` Add Preproc out file support
 - `0.2.0` Add Preproc support and fix major save bug
 

@@ -1,10 +1,12 @@
 import * as vscode from "vscode";
 import { OutputHandle } from "./output";
-import { DefsDownloader } from "./defsDownloader";
+import { DefsDownloader, getFilePathForUrl } from "./defsDownloader";
 import path from "path";
 import { getOutput } from "./extension";
-import { runPreProc } from "./preProcRunner";
+import { runCmd, runPreProc } from "./preProcRunner";
 import { getVscodeLangFromLanguage, Language } from "./tempWatcher";
+import { Config, getConfig } from "./config";
+import os from "os";
 
 enum Commands {
     Enable = "sl-external-editor.enable",
@@ -13,6 +15,7 @@ enum Commands {
     UpdateAll = "sl-external-editor.updateAll",
     UpdateSnippets = "sl-external-editor.updateSnippets",
     RunPreproc = "sl-external-editor.runPreProc",
+    InstallPreproc = "sl-external-editor.installPreProc",
 }
 
 export function setupCommands(
@@ -115,6 +118,55 @@ export function setupCommands(
                 output.appendLine(`FAILED\n${e}`);
             }
         },
+        [Commands.InstallPreproc]: async function (): Promise<void> {
+            const url = getPreProcUrl();
+            if (!url) {
+                vscode.window.showErrorMessage(
+                    "Unable to get download url for a preproc",
+                );
+                return;
+            }
+            const reply = await vscode.window
+                .showInformationMessage(
+                    `Sure you want to download: ${url[0]}`,
+                    "Yes",
+                    "No",
+                );
+
+            if (reply != "Yes") return;
+            const reply2 = await vscode.window
+                .showWarningMessage(
+                    `You are downloading an executable are you REALLY REALLY SURE.`,
+                    "Yes",
+                    "No",
+                );
+            if (reply2 != "Yes") return;
+            const result = await fetch(url[0]);
+            const buff = await result.arrayBuffer();
+            const file = getFilePathForUrl(url[0], context);
+            await vscode.workspace.fs.writeFile(
+                file,
+                new Uint8Array(buff),
+            );
+            output.appendLine(
+                `Downloaded: ${url[0]}\nAnd Save to: ${file.path}`,
+            );
+            vscode.workspace.getConfiguration().update(
+                Config.PreProcCommandSLua,
+                file.path + " " + url[1],
+            );
+            vscode.workspace.getConfiguration().update(
+                Config.PreProcCommandLSL,
+                file.path + " " + url[1],
+            );
+            if (os.platform() == "linux") {
+                try {
+                    await runCmd(`chmod +x ${file.path}`);
+                } catch (e) {
+                    vscode.window.showErrorMessage(`${e}`);
+                }
+            }
+        },
     };
 
     for (const [cmd, func] of Object.entries(commands)) {
@@ -124,5 +176,29 @@ export function setupCommands(
                 func,
             ),
         );
+    }
+}
+
+function getPreProcUrl(): [string, string] | false {
+    let url: string | false = getConfig<string>(Config.PreProcDownload) || "";
+    let cmd = '"%script%"';
+    if (!url.startsWith("https://")) {
+        url = getDefaultDslUrl();
+        cmd = '--file "%script%" --lang "%lang%" --root "%root%"';
+    }
+    if (!url) return false;
+    return [url, cmd];
+}
+
+function getDefaultDslUrl(): string | false {
+    switch (os.platform()) {
+        case "win32":
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.0/win_dsl_preproc.exe";
+        case "darwin":
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.0/mac_dsl_preproc";
+        case "linux":
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.0/dsl_preproc";
+        default:
+            return false;
     }
 }
