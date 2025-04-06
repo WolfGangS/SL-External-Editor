@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import path from "path";
 import { TempWatcher } from "./tempWatcher";
 import { Config, ConfigWatcher, getConfig } from "./config";
 import { Output, OutputHandle } from "./output";
 import { DefsDownloader, DownloadResult } from "./defsDownloader";
 import { setupCommands } from "./commands";
 import { WorkspaceFileTester } from "./workspaceFileTester";
+import { SaveProcess } from "./saveProcess";
 
 let output: Output | null = null;
 let mainOutput: OutputHandle | null = null;
@@ -33,6 +33,10 @@ export function activate(context: vscode.ExtensionContext) {
 		WorkspaceFileTester.Setup(mainOutput.getHandle("Workspace")),
 	);
 
+	context.subscriptions.push(
+		SaveProcess.Setup(mainOutput.getHandle("Save")),
+	);
+
 	mainOutput.appendLine("Activate");
 	ConfigWatcher.Get()
 		.hook(Config.Enabled, "enabledSetup", () => setup(context))
@@ -53,8 +57,9 @@ async function setup(context: vscode.ExtensionContext) {
 	mainOutput?.appendLine("Enabled: " + (enabled ? "Yes" : "No"));
 	TempWatcher.Get().setRunning(true);
 	WorkspaceFileTester.Get().setRunning(true);
-
-	if (enabled && DefsDownloader.enabled()) {
+	if (!enabled) return;
+	SaveProcess.Get().start();
+	if (DefsDownloader.enabled()) {
 		if (DefsDownloader.get().needsDownload()) {
 			await DefsDownloader.get().download();
 		}
