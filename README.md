@@ -17,8 +17,15 @@ Setting the external editor config in the viewer to something like this..
 - Mac: `/opt/homebrew/bin/code -r "/Users/<user>/projects/sl/scripting" "%s"`
 - Linux: `/usr/bin/code "/home/<user>/projects/sl/scripting" "%s"`
 
+These are not exact examples, your system setup may differ, but should be
+somewhat similar.
+
 After that you should be good to go, though I would advise looking through the
 config options below, and trying the hint system.
+
+## Support
+
+Contact `WolfGang Senizen` in world if you are having issues.
 
 ## Features
 
@@ -94,6 +101,9 @@ This extension contributes the following settings:
   automatically downloaded
 - `secondLifeExternalEditor.download.location` Where those files should be
   stored for your projects
+- `secondLifeExternalEditor.matcher.autoCloseTempScript` If a temp script file
+  is opened and a matching file is found, the temp file will be closed and
+  matching file opened.
 - Requires
   [Luau Language Server](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp)
   or similar
