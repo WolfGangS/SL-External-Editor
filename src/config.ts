@@ -11,6 +11,18 @@ export enum Config {
     PreProcWatchIncludes =
         "secondlifeExternalEditor.preprocessor.watchIncludes",
     PreProcCommand = "secondlifeExternalEditor.preprocessor.command",
+    Download = "secondlifeExternalEditor.download",
+    DownloadLocation = "secondlifeExternalEditor.download.location",
+    LuauLSPDefs = "secondlifeExternalEditor.luau-lsp.downloadTypeDefs",
+    LuauLSPDocs = "secondlifeExternalEditor.luau-lsp.downloadApiDocs",
+    SeleneDocs = "secondlifeExternalEditor.selene.download",
+}
+
+export enum DownloadLocation {
+    Global = "global",
+    Root = "root",
+    VSCode = "vscode",
+    Types = "types",
 }
 
 export function getConfig<T>(config: Config): T | null {
@@ -33,6 +45,11 @@ export class ConfigWatcher implements vscode.Disposable {
         [Config.PreProcCommand]: {},
         [Config.HintsPrefix]: {},
         [Config.PreProcWatchIncludes]: {},
+        [Config.Download]: {},
+        [Config.LuauLSPDefs]: {},
+        [Config.LuauLSPDocs]: {},
+        [Config.SeleneDocs]: {},
+        [Config.DownloadLocation]: {},
     };
     private output: OutputHandle;
 

@@ -21,7 +21,7 @@ jobs:
         run: npm ci
       - name: vsce
         run: npx @vscode/vsce package --out sl-external-editor-dev.vsix
-      - name: Upload Artiface
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: extension

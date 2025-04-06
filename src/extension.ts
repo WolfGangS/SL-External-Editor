@@ -3,85 +3,51 @@ import path from "path";
 import { TempWatcher } from "./tempWatcher";
 import { Config, ConfigWatcher, getConfig } from "./config";
 import { Output, OutputHandle } from "./output";
+import { DefsDownloader, DownloadResult } from "./defsDownloader";
+import { setupCommands } from "./commands";
 
 let output: Output | null = null;
 let mainOutput: OutputHandle | null = null;
+let downloader: DefsDownloader | null = null;
 
 export function activate(context: vscode.ExtensionContext) {
-	const disposable = vscode.commands.registerCommand(
-		"sl-external-editor.enable",
-		() => {
-			mainOutput?.appendLine("Enable command");
-			vscode.window.showInformationMessage(
-				"SL External Editor Enabled for workspace",
-			);
-			vscode.workspace.getConfiguration("secondlifeExternalEditor")
-				.update("enabled", true);
-		},
-	);
-
 	output = new Output("SL External Editor");
 	mainOutput = output.getHandle("SL Ext");
+
+	DefsDownloader.setup(
+		mainOutput.getHandle("Downloader"),
+		context,
+	);
 
 	context.subscriptions.push(
 		TempWatcher.Setup(mainOutput.getHandle("Temp Watcher")),
 	);
 	context.subscriptions.push(output);
-	context.subscriptions.push(disposable);
+	setupCommands(mainOutput.getHandle("Commands"), context);
 	context.subscriptions.push(
 		ConfigWatcher.Setup(mainOutput.getHandle("Config Watcher")),
 	);
 
-	vscode.workspace.onDidSaveTextDocument((e) => {
-		mainOutput?.appendLine("SAVE: " + e.fileName);
-		const relative = vscode.workspace.asRelativePath(e.fileName);
-		const tempFile = TempWatcher.Get().getMatchingTempFile(
-			e.fileName,
-			relative,
-		);
-		if (tempFile) {
-			const root = tempFile.rootFile == e.fileName.toLowerCase();
-			if (root) {
-				vscode.workspace.fs.readFile(vscode.Uri.file(e.fileName))
-					.then((data) => {
-						const text = new TextDecoder().decode(data);
-						const prefix: string[] = [];
-						for (const hint in tempFile.hints) {
-							prefix.push(
-								`${tempFile.comment} ${tempFile.hintPrefix}${hint} ${
-									tempFile.hints[hint]
-								}`,
-							);
-						}
-						if (prefix.length) {
-							prefix.push(
-								`${tempFile.comment} ============================ ${tempFile.comment}`,
-							);
-							prefix.unshift(
-								`${tempFile.comment} ============================ ${tempFile.comment}`,
-							);
-							prefix.push(``);
-						}
-						vscode.workspace.fs.writeFile(
-							tempFile.uri,
-							new TextEncoder().encode(prefix.join("\n") + text),
-						);
-					});
-			}
-		}
-	});
-
 	mainOutput.appendLine("Activate");
 	ConfigWatcher.Get()
-		.hook(Config.Enabled, "enabledSetup", () => setup())
+		.hook(Config.Enabled, "enabledSetup", () => setup(context))
 		.start();
-	setup();
+	setup(context);
 }
 
-function setup() {
+async function setup(context: vscode.ExtensionContext) {
 	const enabled = getConfig<boolean>(Config.Enabled) || false;
 	mainOutput?.appendLine("Enabled: " + (enabled ? "Yes" : "No"));
 	TempWatcher.Get().setRunning(enabled);
+	if (enabled && vscode.extensions.getExtension("johnnymorganz.luau-lsp")) {
+		const result = await DefsDownloader.get().download();
+		if (result.lsp) {
+			await DefsDownloader.get().updateLuauLSPConfig(result.lsp);
+		}
+		if (result.selene) {
+			await DefsDownloader.get().updateSeleneConfig(result.selene);
+		}
+	}
 }
 
 export function deactivate() {
