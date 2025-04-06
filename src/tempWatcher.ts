@@ -67,7 +67,10 @@ export class TempWatcher implements vscode.Disposable {
     static Setup(output: OutputHandle): TempWatcher {
         if (this.instance) this.instance.dispose();
         const tempDir = os.platform() == "win32"
-            ? vscode.Uri.file("/tmp")
+            ? vscode.Uri.joinPath(
+                vscode.Uri.file(process.env.LOCALAPPDATA || ""),
+                "Temp",
+            )
             : vscode.Uri.file("/tmp");
         this.instance = new TempWatcher(tempDir, output);
         return this.instance;
@@ -230,9 +233,9 @@ export class TempWatcher implements vscode.Disposable {
         const parts = fileName.split(".");
         parts.pop();
         const fileNameSansExt = parts.join(".");
-        const dirs = dirPath.split("/");
+        const dirs = dirPath.split(path.sep);
         const dir = dirs[dirs.length - 1];
-        const filePathSansExt = `${dirPath}/${fileNameSansExt}`;
+        const filePathSansExt = `${dirPath}${path.sep}${fileNameSansExt}`;
         this.output.appendLine(`CHECK PATH: ${filePath}`);
         this.output.appendLine(`CHECK EXT: ${fileExt}`);
         this.output.appendLine(`CHECK NAME: ${fileName}`);
@@ -251,9 +254,9 @@ export class TempWatcher implements vscode.Disposable {
             if (parts.length == 2) {
                 let projPath = parts.pop() as string;
                 this.output.appendLine(
-                    `CHECK PROJ: ${projectHint} > ${projPath}`,
+                    `CHECK PROJECT: ${projectHint} > ${projPath}`,
                 );
-                while (projPath?.startsWith("/")) {
+                while (projPath?.startsWith(path.sep)) {
                     projPath = projPath.substring(1);
                 }
                 return this.createAlternateNameArray(
@@ -262,6 +265,7 @@ export class TempWatcher implements vscode.Disposable {
                     fileExt,
                 ).includes(file.scriptName);
             }
+            this.output.appendLine("NOT IN PROJECT");
             return false;
         }
         if (
@@ -269,17 +273,6 @@ export class TempWatcher implements vscode.Disposable {
             !root
         ) {
             this.output.appendLine("Dir Prefix Required");
-            this.output.appendLine(
-                JSON.stringify(
-                    this.createAlternateNameArray(
-                        [dir],
-                        `${fileNameSansExt}`,
-                        fileExt,
-                    ),
-                    null,
-                    2,
-                ),
-            );
             return this.createAlternateNameArray(
                 [dir],
                 `${fileNameSansExt}`,
@@ -293,18 +286,22 @@ export class TempWatcher implements vscode.Disposable {
 
     private createAlternateNameArray(
         dirs: string[],
-        path: string,
+        filePath: string,
         ext: string,
     ): string[] {
-        const data = [
-            path,
-            path.replaceAll("/", ""),
-            path.replaceAll("/", " "),
-            path.replaceAll("/", "_"),
-            path.replaceAll("/", "-"),
-            path.replaceAll("/", "."),
-        ];
-
+        let data: string[] = [];
+        for (const dir of dirs) {
+            const fpath = `${dir}${path.sep}${filePath}`;
+            data = [
+                ...data,
+                fpath,
+                fpath.replaceAll(path.sep, ""),
+                fpath.replaceAll(path.sep, " "),
+                fpath.replaceAll(path.sep, "_"),
+                fpath.replaceAll(path.sep, "-"),
+                fpath.replaceAll(path.sep, "."),
+            ];
+        }
         return [...data, ...data.map((s) => `${s}.${ext}`)];
     }
 
