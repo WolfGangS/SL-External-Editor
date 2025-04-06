@@ -106,7 +106,9 @@ for LSL, `--` for SLua
 
 ## Extension Settings
 
-This extension contributes the following settings:
+This extension has the following settings:
+
+#### General
 
 - `secondLifeExternalEditor.enabled`: Recommend this is set at a workspace level
   rather than system wide
@@ -126,10 +128,15 @@ This extension contributes the following settings:
   of your script in SL.
 - `secondLifeExternalEditor.watcher.fileExtensions`: List of file extensions to
   care about. (Defaults to `lua, luau, lsl, slua`)
-- `secondLifeExternalEditor.download` Wether Type Def files should be
+
+#### Type Def and Snippet Downloads
+
+- `secondLifeExternalEditor.download.enabled` Wether Type Def files should be
   automatically downloaded
 - `secondLifeExternalEditor.download.location` Where those files should be
   stored for your projects
+- `secondLifeExternalEditor.download.snippets` Where to download snippets for
+  vscode from
 - `secondLifeExternalEditor.matcher.autoCloseTempScript` If a temp script file
   is opened and a matching file is found, the temp file will be closed and
   matching file opened.
@@ -145,16 +152,21 @@ This extension contributes the following settings:
   or similar
   - `secondLifeExternalEditor.selene.download` The location to download a selene
     standard library definition from
-- _**Not yet implemented**_
-  - `secondLifeExternalEditor.preprocessor.command.lsl`: The command to execute
-    as a preprocessor step to affect the output before it is put into the
-    viewers temp file for lsl scripts
-  - `secondLifeExternalEditor.preprocessor.command.slua`: The command to execute
-    as a preprocessor step to affect the output before it is put into the
-    viewers temp file for SLua scripts
-  - `secondLifeExternalEditor.preprocessor.watchIncludes`: If the preprocessor
-    outputs compatible information about extra files it included, then the
-    extension will watch for those files changing as well
+
+#### Preprocessor
+
+- `secondLifeExternalEditor.preprocessor.command.lsl`: The command to execute as
+  a preprocessor step to affect the output before it is put into the viewers
+  temp file for lsl scripts
+- `secondLifeExternalEditor.preprocessor.command.slua`: The command to execute
+  as a preprocessor step to affect the output before it is put into the viewers
+  temp file for SLua scripts
+- `secondLifeExternalEditor.preprocessor.watchIncludes`: If the preprocessor
+  outputs compatible information about extra files it included, then the
+  extension will watch for those files changing as well
+- `secondLifeExternalEditor.preprocessor.download` Url to download preproc
+  from.\n\nIf not specified and the command is run, it will download the
+  [default dsl option](https://github.com/WolfGangS/DSL-PreProc)
 
 ## Planned Features
 
