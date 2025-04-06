@@ -35,10 +35,11 @@ function getCommentFormatForLanguage(lang: Language): string {
     }
 }
 
-function getLanguageForFileExt(fileExt: string): Language {
+function getLanguageForFileExtension(fileExt: string): Language {
     switch (fileExt.toLowerCase()) {
         case "lua":
         case "luau":
+        case "slua":
             return Language.SLua;
         case "lsl":
             return Language.LSL;
@@ -149,7 +150,7 @@ export class TempWatcher implements vscode.Disposable {
         parts.shift();
         parts.shift();
         const scriptName = parts.join("_").toLowerCase();
-        const language = getLanguageForFileExt(ext);
+        const language = getLanguageForFileExtension(ext);
         return {
             fileName,
             language,
@@ -268,13 +269,13 @@ export class TempWatcher implements vscode.Disposable {
             return false;
         }
 
-        const lang = getLanguageForFileExt(fileExt);
+        const lang = getLanguageForFileExtension(fileExt);
         if (lang != file.language) {
             this.output.appendLine(
                 `CHECK: Language ... ${file.language} == ${lang} ... FAIL`,
             );
             vscode.window.showWarningMessage(
-                `Saved file matches name but is unexpected language.\nMatched file is: ${file.language}\nSaved file is: ${lang}`,
+                `Saved file matches '${file.scriptName}' but is unexpected language. Matched file is '${file.language}' but saved file is '${lang}'`,
             );
             return false;
         }
@@ -337,9 +338,7 @@ export class TempWatcher implements vscode.Disposable {
         file: WatchedFile,
     ): boolean {
         this.output.append(relativePath + " > " + file.scriptName + " ... ");
-        const exts = getFileExtensionsForLanguage(file.language).map((e) =>
-            `.${e}`
-        );
+        const exts = getFileExtensions().map((e) => `.${e}`);
         exts.push("");
 
         const scriptNames = exts.map((e) => `${file.scriptName}${e}`);
