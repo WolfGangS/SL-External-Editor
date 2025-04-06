@@ -206,6 +206,7 @@ export class DefsDownloader {
                 await vscode.workspace.fs.copy(
                     cached,
                     target,
+                    { overwrite: true },
                 );
             }
             dlDefs.push(target.path);
@@ -221,6 +222,7 @@ export class DefsDownloader {
                 await vscode.workspace.fs.copy(
                     cached,
                     target,
+                    { overwrite: true },
                 );
             }
             dlDocs.push(target.path);
@@ -265,10 +267,18 @@ export class DefsDownloader {
         await vscode.workspace.fs.copy(
             seleneCache,
             target,
+            { overwrite: true },
         );
+        const relative = vscode.workspace.asRelativePath(target).replaceAll(
+            ".yml",
+            "",
+        );
+
         await vscode.workspace.fs.writeFile(
             vscode.Uri.joinPath(wf, "selene.toml"),
-            new TextEncoder().encode(seleneToml),
+            new TextEncoder().encode(
+                seleneToml.replaceAll('"sl_selene_defs"', `"${relative}"`),
+            ),
         );
         vscode.window.showInformationMessage("Selene Setup");
     }

@@ -6,7 +6,7 @@ import { Config, getConfig } from "./config";
 
 type WatchedFileHints = { [k: string]: string | undefined };
 
-enum Language {
+export enum Language {
     None = "None",
     LSL = "LSL",
     SLua = "SLua",
@@ -48,7 +48,7 @@ function getLanguageForFileExtension(fileExt: string): Language {
     }
 }
 
-function getFileExtensionsForLanguage(lang: Language): string[] {
+export function getFileExtensionsForLanguage(lang: Language): string[] {
     switch (lang) {
         case Language.SLua:
             return ["luau", "slua", "lua"];
@@ -267,6 +267,10 @@ export class TempWatcher implements vscode.Disposable {
             }
         }
         return null;
+    }
+
+    getWatchedFileForFileUri(fileUri: vscode.Uri): WatchedFile | null {
+        return this.watched[fileUri.path] || null;
     }
 
     fileNameMatchesWatchedFile(
