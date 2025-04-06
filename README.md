@@ -137,6 +137,7 @@ This extension contributes the following settings:
 
 ### 0.0
 
+- `0.0.9` Better handling of auto opening files.
 - `0.0.8` Add file open handling and auto closing of temp files
 - `0.0.7` Fix for file copying not overwriting existing files
 - `0.0.6` Setup publisher

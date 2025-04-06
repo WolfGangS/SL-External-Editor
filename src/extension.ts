@@ -9,9 +9,10 @@ import { WorkspaceFileTester } from "./workspaceFileTester";
 
 let output: Output | null = null;
 let mainOutput: OutputHandle | null = null;
-let downloader: DefsDownloader | null = null;
+let extContext: vscode.ExtensionContext | null = null;
 
 export function activate(context: vscode.ExtensionContext) {
+	extContext = context;
 	output = new Output("SL External Editor");
 	mainOutput = output.getHandle("SL Ext");
 
@@ -39,11 +40,15 @@ export function activate(context: vscode.ExtensionContext) {
 	setup(context);
 }
 
+export function getContext(): vscode.ExtensionContext | null {
+	return extContext;
+}
+
 async function setup(context: vscode.ExtensionContext) {
 	const enabled = getConfig<boolean>(Config.Enabled) || false;
 	mainOutput?.appendLine("Enabled: " + (enabled ? "Yes" : "No"));
-	TempWatcher.Get().setRunning(enabled);
-	WorkspaceFileTester.Get().setRunning(enabled);
+	TempWatcher.Get().setRunning(true);
+	WorkspaceFileTester.Get().setRunning(true);
 	if (enabled && vscode.extensions.getExtension("johnnymorganz.luau-lsp")) {
 		const result = await DefsDownloader.get().download();
 		if (result.lsp) {
@@ -56,5 +61,6 @@ async function setup(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+	extContext = null;
 	mainOutput?.appendLine("Deactivate");
 }
