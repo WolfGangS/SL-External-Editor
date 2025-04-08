@@ -245,11 +245,11 @@ export function getPreProcUrl(): [string, string] | false {
 function getDefaultDslUrl(): string | false {
     switch (os.platform()) {
         case "win32":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.1/win_dsl_preproc.exe";
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.0/win_dsl_preproc.exe";
         case "darwin":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.1/mac_dsl_preproc";
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.0/mac_dsl_preproc";
         case "linux":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.1/dsl_preproc";
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.0/dsl_preproc";
         default:
             return false;
     }
