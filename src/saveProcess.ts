@@ -80,7 +80,7 @@ export class SaveProcess implements vscode.Disposable {
             await this.saveDataToTempFile(tempFile.rootFile, tempFile);
         } else {
             vscode.window.showErrorMessage(
-                "Include file didnt have linked root... How?",
+                "Include file didn't have linked root... How?",
             );
         }
     }
@@ -89,29 +89,39 @@ export class SaveProcess implements vscode.Disposable {
         fileUri: vscode.Uri,
         tempFile: WatchedFile,
     ) {
-        const text = await getTextToSave(fileUri, tempFile);
+        try {
+            const text = await getTextToSave(fileUri, tempFile);
 
-        const prefix: string[] = [];
-        for (const hint in tempFile.hints) {
+            const prefix: string[] = [];
             prefix.push(
-                `${tempFile.comment} ${tempFile.hintPrefix}${hint} ${
-                    tempFile.hints[hint]
-                }`,
+                `${tempFile.comment} Saved: ${new Date().toUTCString()} UTC`,
             );
+            for (const hint in tempFile.hints) {
+                prefix.push(
+                    `${tempFile.comment} ${tempFile.hintPrefix}${hint} ${
+                        tempFile.hints[hint]
+                    }`,
+                );
+            }
+            if (prefix.length) {
+                prefix.push(
+                    `${tempFile.comment} ============================ ${tempFile.comment}`,
+                );
+                prefix.unshift(
+                    `${tempFile.comment} ============================ ${tempFile.comment}`,
+                );
+                prefix.push(`${tempFile.comment} SCRIPT_START`);
+                prefix.push(``);
+            }
+            await vscode.workspace.fs.writeFile(
+                tempFile.uri,
+                new TextEncoder().encode(prefix.join("\n") + text),
+            );
+        } catch (e) {
+            if (e instanceof PreProcError) {
+                vscode.window.showErrorMessage(e.message);
+            }
         }
-        if (prefix.length) {
-            prefix.push(
-                `${tempFile.comment} ============================ ${tempFile.comment}`,
-            );
-            prefix.unshift(
-                `${tempFile.comment} ============================ ${tempFile.comment}`,
-            );
-            prefix.push(``);
-        }
-        await vscode.workspace.fs.writeFile(
-            tempFile.uri,
-            new TextEncoder().encode(prefix.join("\n") + text),
-        );
     }
 
     stop() {
@@ -128,11 +138,49 @@ async function getTextToSave(
     tempFile: WatchedFile,
 ): Promise<string> {
     if (isPreProcConfigured(fileUri)) {
-        const result = await runPreProc(fileUri);
-        tempFile.includedFiles = result.files.map((f) => f.toLowerCase());
-        return result.text;
+        try {
+            const result = await runPreProc(fileUri);
+            if (result.success) {
+                tempFile.includedFiles = result.files.map((f) =>
+                    f.toLowerCase()
+                );
+                if (result.sourceMap) {
+                    await vscode.workspace.fs.writeFile(
+                        vscode.Uri.file(tempFile.uri.path + ".map"),
+                        new TextEncoder().encode(
+                            JSON.stringify(result.sourceMap),
+                        ),
+                    );
+                }
+                return result.text;
+            }
+            throw new PreProcError(result.errorMessage ?? "Pre Proc Failed");
+        } catch (e) {
+            if (e instanceof Error) {
+                throw new PreProcError("Preproc failed", e);
+            }
+            throw new PreProcError(`Preproc failed\n${e}`);
+        }
     } else {
         const data = await vscode.workspace.fs.readFile(fileUri);
         return new TextDecoder().decode(data);
+    }
+}
+
+class PreProcError extends Error {
+    private wrapped: Error | null = null;
+    constructor(message: string | Error, error?: Error) {
+        if (message instanceof Error) {
+            error = message;
+            message = error.message;
+        } else if (error) {
+            message += "\n" + error.message;
+        }
+        super(message);
+        this.wrapped = error ?? null;
+    }
+
+    get stack(): string | undefined {
+        return this.wrapped?.stack ?? super.stack;
     }
 }

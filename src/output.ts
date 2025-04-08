@@ -4,6 +4,7 @@ export type OutputHandle = {
     append: (txt: string) => void;
     appendLine: (txt: string) => void;
     getHandle: (prefix: string) => OutputHandle;
+    show: () => void;
 };
 
 export class Output implements vscode.Disposable {
@@ -29,6 +30,9 @@ export class Output implements vscode.Disposable {
             },
             getHandle: (subPrefix: string) =>
                 this.getHandle(`${prefix}>${subPrefix}`),
+            show: () => {
+                this.output.show();
+            },
         };
     }
 
@@ -56,5 +60,6 @@ export function stubOutput(): OutputHandle {
         getHandle: function (prefix: string): OutputHandle {
             return stubOutput();
         },
+        show: () => {},
     };
 }

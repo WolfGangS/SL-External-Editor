@@ -3,7 +3,7 @@ import { OutputHandle } from "./output";
 import { DefsDownloader, getFilePathForUrl } from "./defsDownloader";
 import path from "path";
 import { getOutput } from "./extension";
-import { runCmd, runPreProc } from "./preProcRunner";
+import { downloadPreProc, getPreProcUrl, runPreProc } from "./preProcRunner";
 import { getVscodeLangFromLanguage, Language } from "./tempWatcher";
 import { Config, getConfig } from "./config";
 import os from "os";
@@ -116,6 +116,7 @@ export function setupCommands(
                     "Preproc failed to run, check output",
                 );
                 output.appendLine(`FAILED\n${e}`);
+                output.show();
             }
         },
         [Commands.InstallPreproc]: async function (): Promise<void> {
@@ -141,31 +142,7 @@ export function setupCommands(
                     "No",
                 );
             if (reply2 != "Yes") return;
-            const result = await fetch(url[0]);
-            const buff = await result.arrayBuffer();
-            const file = getFilePathForUrl(url[0], context);
-            await vscode.workspace.fs.writeFile(
-                file,
-                new Uint8Array(buff),
-            );
-            output.appendLine(
-                `Downloaded: ${url[0]}\nAnd Save to: ${file.path}`,
-            );
-            vscode.workspace.getConfiguration().update(
-                Config.PreProcCommandSLua,
-                `"${file.path}" ${url[1]}`,
-            );
-            vscode.workspace.getConfiguration().update(
-                Config.PreProcCommandLSL,
-                `"${file.path}" ${url[1]}`,
-            );
-            if (os.platform() == "linux") {
-                try {
-                    await runCmd(`chmod +x ${file.path}`);
-                } catch (e) {
-                    vscode.window.showErrorMessage(`${e}`);
-                }
-            }
+            downloadPreProc(context);
         },
     };
 
@@ -176,29 +153,5 @@ export function setupCommands(
                 func,
             ),
         );
-    }
-}
-
-function getPreProcUrl(): [string, string] | false {
-    let url: string | false = getConfig<string>(Config.PreProcDownload) || "";
-    let cmd = '"%script%"';
-    if (!url.startsWith("https://")) {
-        url = getDefaultDslUrl();
-        cmd = '--file "%script%" --lang "%lang%" --root "%root%"';
-    }
-    if (!url) return false;
-    return [url, cmd];
-}
-
-function getDefaultDslUrl(): string | false {
-    switch (os.platform()) {
-        case "win32":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.0/win_dsl_preproc.exe";
-        case "darwin":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.0/mac_dsl_preproc";
-        case "linux":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.0/dsl_preproc";
-        default:
-            return false;
     }
 }

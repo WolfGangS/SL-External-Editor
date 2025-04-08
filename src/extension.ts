@@ -6,6 +6,7 @@ import { DefsDownloader, DownloadResult } from "./defsDownloader";
 import { setupCommands } from "./commands";
 import { WorkspaceFileTester } from "./workspaceFileTester";
 import { SaveProcess } from "./saveProcess";
+import { ErrorWatcher } from "./errorWatcher";
 
 let output: Output | null = null;
 let mainOutput: OutputHandle | null = null;
@@ -35,6 +36,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		SaveProcess.Setup(mainOutput.getHandle("Save")),
+	);
+
+	context.subscriptions.push(
+		ErrorWatcher.Setup(mainOutput.getHandle("Error")).start(),
 	);
 
 	mainOutput.appendLine("Activate");

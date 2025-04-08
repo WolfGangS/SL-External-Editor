@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import os from "os";
 import {
     getLanguageForFileExtension,
     getTempDir,
@@ -6,10 +7,10 @@ import {
 } from "./tempWatcher";
 import { Config, getConfig } from "./config";
 import { getOutput } from "./extension";
-import { OutputHandle } from "./output";
 import * as path from "path";
 import util from "node:util";
 import child_process from "node:child_process";
+import { getFilePathForUrl } from "./defsDownloader";
 const exec = util.promisify(child_process.exec);
 
 export function isPreProcConfigured(uri: vscode.Uri) {
@@ -17,6 +18,9 @@ export function isPreProcConfigured(uri: vscode.Uri) {
     if (!lang) return false;
     const cmd = getCmd(lang);
     return !!cmd;
+}
+
+export async function queryLinesFromPreProc(lines: number[]) {
 }
 
 export async function runPreProc(
@@ -34,45 +38,63 @@ export async function runPreProc(
         throw new Error("Couldn't determine language as LSL or SLua");
     }
 
-    const rawCmd = getCmd(language);
-    if (!rawCmd) throw new Error("No preproc command configured");
-
-    const [cmd, out] = prepCmd(rawCmd, uri, language, wf);
+    const [cmd, out] = getPreparedCMD(uri, language, wf);
+    if (!cmd) throw new Error("No preproc command configured");
 
     output.appendLine("Run command: " + cmd);
 
-    const result = await runCmd(cmd);
-    const decoded = await decodeResponse(result.stdout, out);
-    if (typeof decoded == "string") {
-        return {
-            text: decoded,
-            files: [],
-            language,
-        };
-    } else {
-        return { ...decoded, language };
+    try {
+        const result = await runCmd(cmd);
+        const decoded = await decodeResponse(result.stdout, out);
+        if (typeof decoded == "string") {
+            return {
+                success: true,
+                text: decoded,
+                files: [],
+                language,
+            };
+        } else {
+            const ts = JSON.parse(JSON.stringify(decoded));
+            delete ts["text"];
+            output.appendLine(JSON.stringify(ts, null, 2));
+            return { success: true, language, ...decoded };
+        }
+    } catch (e) {
+        vscode.window.showErrorMessage(`PREPROC FAILED: ${e}`);
     }
+    return { success: false, text: "", language, files: [] };
 }
 
 async function decodeResponse(
     stdout: string,
     out: vscode.Uri | false,
-): Promise<string | PreProcResponse> {
+): Promise<string | PreProcOuptut> {
     try {
         if (out) {
             const data = await vscode.workspace.fs.readFile(out);
             stdout = new TextDecoder().decode(data);
+            await vscode.workspace.fs.delete(out);
         }
         const json = JSON.parse(stdout);
-        if (isPreProcResponse(json)) {
-            return json;
+        if (isPreProcOutput(json)) {
+            return { success: true, ...json };
         }
     } catch (_e) {
     }
     return stdout;
 }
 
-function prepCmd(
+export function getPreparedCMD(
+    uri: vscode.Uri,
+    lang: Language,
+    wf: vscode.Uri,
+): [string | false, vscode.Uri | false] {
+    const raw = getCmd(lang);
+    if (!raw) return [false, false];
+    return prepCmd(raw, uri, lang, wf);
+}
+
+export function prepCmd(
     cmd: string,
     uri: vscode.Uri,
     lang: Language,
@@ -116,7 +138,7 @@ function getLang(uri: vscode.Uri, silent: boolean = false): Language | null {
     return lang;
 }
 
-function getWorkingFolder(): vscode.Uri | null {
+export function getWorkingFolder(): vscode.Uri | null {
     if (!vscode.workspace.workspaceFolders) {
         return null;
     }
@@ -124,13 +146,26 @@ function getWorkingFolder(): vscode.Uri | null {
 }
 
 type PreProcResponse = {
+    success: boolean;
     text: string;
     files: string[];
-    hash?: string;
     language: Language;
+    hash?: string;
+    errorMessage?: string;
+    sourceMap?: unknown;
 };
 
-function isPreProcResponse(json: unknown): json is PreProcResponse {
+type PreProcOuptut = {
+    success?: boolean;
+    text: string;
+    files: string[];
+    language?: Language;
+    hash?: string;
+    errorMessage?: string;
+    sourceMap?: unknown;
+};
+
+function isPreProcOutput(json: unknown): json is PreProcOuptut {
     if (typeof json != "object") return false;
     if (json == null) return false;
     if (json instanceof Array) return false;
@@ -141,6 +176,12 @@ function isPreProcResponse(json: unknown): json is PreProcResponse {
     if (!isStringArray(json.files)) return false;
     if ("hash" in json) {
         if (typeof (json.hash) != "string") return false;
+    }
+    if ("success" in json) {
+        if (typeof json.success != "boolean") return false;
+    }
+    if ("success" in json) {
+        if (typeof json.success != "boolean") return false;
     }
     return true;
 }
@@ -156,4 +197,60 @@ export async function runCmd(
     cmd: string,
 ): Promise<child_process.PromiseWithChild<{ stderr: string; stdout: string }>> {
     return await exec(cmd);
+}
+
+export async function downloadPreProc(context: vscode.ExtensionContext) {
+    const url = getPreProcUrl();
+    if (!url) return;
+    const output = getOutput("PreProc DL");
+    if (!output) throw "no output";
+    const result = await fetch(url[0]);
+    const buff = await result.arrayBuffer();
+    const file = getFilePathForUrl(url[0], context);
+    await vscode.workspace.fs.writeFile(
+        file,
+        new Uint8Array(buff),
+    );
+    output.appendLine(
+        `Downloaded: ${url[0]}\nAnd Save to: ${file.path}`,
+    );
+    vscode.workspace.getConfiguration().update(
+        Config.PreProcCommandSLua,
+        `"${file.path}" ${url[1]}`,
+    );
+    vscode.workspace.getConfiguration().update(
+        Config.PreProcCommandLSL,
+        `"${file.path}" ${url[1]}`,
+    );
+    if (os.platform() == "linux") {
+        try {
+            await runCmd(`chmod +x ${file.path}`);
+        } catch (e) {
+            vscode.window.showErrorMessage(`${e}`);
+        }
+    }
+}
+
+export function getPreProcUrl(): [string, string] | false {
+    let url: string | false = getConfig<string>(Config.PreProcDownload) || "";
+    let cmd = '"%script%"';
+    if (!url.startsWith("https://")) {
+        url = getDefaultDslUrl();
+        cmd = '--file "%script%" --lang "%lang%" --root "%root%"';
+    }
+    if (!url) return false;
+    return [url, cmd];
+}
+
+function getDefaultDslUrl(): string | false {
+    switch (os.platform()) {
+        case "win32":
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.1/win_dsl_preproc.exe";
+        case "darwin":
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.1/mac_dsl_preproc";
+        case "linux":
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.1.1/dsl_preproc";
+        default:
+            return false;
+    }
 }
