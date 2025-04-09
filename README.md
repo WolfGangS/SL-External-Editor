@@ -181,6 +181,7 @@ This extension has the following settings:
 
 ### 0.3
 
+- `0.3.1` Preproc version bump for bug with line counts
 - `0.3.0` Error watcher for new .log file the viewer produces, a little
   pointless at the moment if you have the lsp setup
   - A fix for preproc being configured in workspace config, should now set in
