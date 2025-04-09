@@ -1,12 +1,15 @@
 import * as vscode from "vscode";
 import { OutputHandle } from "./output";
-import { DefsDownloader, getFilePathForUrl } from "./defsDownloader";
+import { DefsDownloader } from "./defsDownloader";
 import path from "path";
 import { getOutput } from "./extension";
-import { downloadPreProc, getPreProcUrl, runPreProc } from "./preProcRunner";
-import { getVscodeLangFromLanguage, Language } from "./tempWatcher";
-import { Config, getConfig } from "./config";
-import os from "os";
+import {
+    downloadPreProc,
+    getPreProcUrl,
+    runPreProc,
+    shouldRedownloadPreProc,
+} from "./preProcRunner";
+import { getVscodeLangFromLanguage } from "./tempWatcher";
 
 enum Commands {
     Enable = "sl-external-editor.enable",
@@ -42,7 +45,7 @@ export function setupCommands(
             await DefsDownloader.get().downloadLSPData(true);
             await DefsDownloader.get().updateLuauLSPConfig(true);
             vscode.window.showInformationMessage(
-                "LUAU LSP Confgi updated",
+                "LUAU LSP Config updated",
             );
         },
         [Commands.SetupSelene]: async function (): Promise<void> {
@@ -66,6 +69,9 @@ export function setupCommands(
             await DefsDownloader.get().updateLuauLSPConfig(true);
             await DefsDownloader.get().updateSeleneConfig(true);
             await DefsDownloader.get().updateSnippets(true);
+            if (await shouldRedownloadPreProc(context)) {
+                await downloadPreProc(context);
+            }
         },
         [Commands.UpdateSnippets]: async function (): Promise<void> {
             await DefsDownloader.get().downloadSnippets(true);

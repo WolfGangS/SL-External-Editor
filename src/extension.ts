@@ -7,6 +7,7 @@ import { setupCommands } from "./commands";
 import { WorkspaceFileTester } from "./workspaceFileTester";
 import { SaveProcess } from "./saveProcess";
 import { ErrorWatcher } from "./errorWatcher";
+import { downloadPreProc, shouldRedownloadPreProc } from "./preProcRunner";
 
 let output: Output | null = null;
 let mainOutput: OutputHandle | null = null;
@@ -71,6 +72,9 @@ async function setup(context: vscode.ExtensionContext) {
 		await DefsDownloader.get().updateLuauLSPConfig();
 		await DefsDownloader.get().updateSeleneConfig();
 		await DefsDownloader.get().updateSnippets();
+		if (await shouldRedownloadPreProc(context)) {
+			await downloadPreProc(context);
+		}
 	}
 }
 

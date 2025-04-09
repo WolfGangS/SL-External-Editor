@@ -13,6 +13,8 @@ import child_process from "node:child_process";
 import { getFilePathForUrl } from "./defsDownloader";
 const exec = util.promisify(child_process.exec);
 
+const state_last_preproc_dl = "sl-ext-editor.preproc.last_dl";
+
 export function isPreProcConfigured(uri: vscode.Uri) {
     const lang = getLang(uri, true);
     if (!lang) return false;
@@ -68,7 +70,7 @@ export async function runPreProc(
 async function decodeResponse(
     stdout: string,
     out: vscode.Uri | false,
-): Promise<string | PreProcOuptut> {
+): Promise<string | PreProcOutput> {
     try {
         if (out) {
             const data = await vscode.workspace.fs.readFile(out);
@@ -155,7 +157,7 @@ type PreProcResponse = {
     sourceMap?: unknown;
 };
 
-type PreProcOuptut = {
+type PreProcOutput = {
     success?: boolean;
     text: string;
     files: string[];
@@ -165,7 +167,7 @@ type PreProcOuptut = {
     sourceMap?: unknown;
 };
 
-function isPreProcOutput(json: unknown): json is PreProcOuptut {
+function isPreProcOutput(json: unknown): json is PreProcOutput {
     if (typeof json != "object") return false;
     if (json == null) return false;
     if (json instanceof Array) return false;
@@ -199,29 +201,78 @@ export async function runCmd(
     return await exec(cmd);
 }
 
+export async function shouldRedownloadPreProc(
+    context: vscode.ExtensionContext,
+): Promise<boolean> {
+    const url = getPreProcUrl();
+    if (!url) return false;
+    const stateUrl = context.globalState.get(state_last_preproc_dl) ?? "";
+    const output = getOutput("PreProc?");
+    output?.appendLine(`Test: '${url[0]}' - '${stateUrl}'`);
+    if (stateUrl == "") {
+        const dirs = await vscode.workspace.fs.readDirectory(
+            context.globalStorageUri,
+        );
+        for (const [name, type] of dirs) {
+            if (type != vscode.FileType.File) continue;
+            output?.appendLine(`Test: file ${name}`);
+            if (name.toLowerCase().includes("preproc")) {
+                output?.appendLine(
+                    `Test File Url: '${url[0]}' - '${stateUrl}'`,
+                );
+                return url[0] != stateUrl;
+            }
+        }
+        return false;
+    }
+    return url[0] != stateUrl;
+}
+
 export async function downloadPreProc(context: vscode.ExtensionContext) {
     const url = getPreProcUrl();
     if (!url) return;
     const output = getOutput("PreProc DL");
     if (!output) throw "no output";
+    output.appendLine(`Downloading '${url[0]}'`);
     const result = await fetch(url[0]);
     const buff = await result.arrayBuffer();
-    const file = getFilePathForUrl(url[0], context);
+    const file = getFilePathForUrl(url[0], context, false);
     await vscode.workspace.fs.writeFile(
         file,
         new Uint8Array(buff),
     );
+    context.globalState.update(state_last_preproc_dl, url[0]);
     output.appendLine(
         `Downloaded: ${url[0]}\nAnd Save to: ${file.path}`,
     );
-    vscode.workspace.getConfiguration().update(
-        Config.PreProcCommandSLua,
-        `"${file.path}" ${url[1]}`,
-    );
-    vscode.workspace.getConfiguration().update(
-        Config.PreProcCommandLSL,
-        `"${file.path}" ${url[1]}`,
-    );
+    const globalDir = context.globalStorageUri.path.toLowerCase();
+    const slua_preproc = (getConfig<string>(Config.PreProcCommandSLua) || "")
+        .toLowerCase();
+    const cmd = url[1].replaceAll("%preproc%", file.path);
+    if (slua_preproc.length < 1 || slua_preproc.startsWith(globalDir)) {
+        vscode.workspace.getConfiguration().update(
+            Config.PreProcCommandSLua,
+            undefined,
+        );
+        vscode.workspace.getConfiguration().update(
+            Config.PreProcCommandSLua,
+            cmd,
+            vscode.ConfigurationTarget.Global,
+        );
+    }
+    const lsl_preproc = (getConfig<string>(Config.PreProcCommandSLua) || "")
+        .toLowerCase();
+    if (lsl_preproc.length < 1 || lsl_preproc.startsWith(globalDir)) {
+        vscode.workspace.getConfiguration().update(
+            Config.PreProcCommandLSL,
+            undefined,
+        );
+        vscode.workspace.getConfiguration().update(
+            Config.PreProcCommandLSL,
+            cmd,
+            vscode.ConfigurationTarget.Global,
+        );
+    }
     if (os.platform() == "linux") {
         try {
             await runCmd(`chmod +x ${file.path}`);
@@ -232,24 +283,22 @@ export async function downloadPreProc(context: vscode.ExtensionContext) {
 }
 
 export function getPreProcUrl(): [string, string] | false {
-    let url: string | false = getConfig<string>(Config.PreProcDownload) || "";
-    let cmd = '"%script%"';
-    if (!url.startsWith("https://")) {
-        url = getDefaultDslUrl();
-        cmd = '--file "%script%" --lang "%lang%" --root "%root%"';
-    }
+    const url = getDefaultDslUrl();
     if (!url) return false;
-    return [url, cmd];
+    return [
+        url,
+        '"%preproc%" --file "%script%" --lang "%lang%" --root "%root%"',
+    ];
 }
 
 function getDefaultDslUrl(): string | false {
     switch (os.platform()) {
         case "win32":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.0/win_dsl_preproc.exe";
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.1/win_dsl_preproc.exe";
         case "darwin":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.0/mac_dsl_preproc";
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.1/mac_dsl_preproc";
         case "linux":
-            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.0/dsl_preproc";
+            return "https://github.com/WolfGangS/DSL-PreProc/releases/download/v0.2.1/dsl_preproc";
         default:
             return false;
     }

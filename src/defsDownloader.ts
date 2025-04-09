@@ -2,8 +2,6 @@ import { Config, DownloadLocation, getConfig } from "./config";
 import { OutputHandle } from "./output";
 import * as vscode from "vscode";
 import path from "path";
-import { arrayMismatch } from "./util";
-import { getOutput } from "./extension";
 
 const seleneToml = `std = "sl_selene_defs"
 
@@ -34,12 +32,16 @@ const cyrb53 = (str: string, seed = 0) => {
 export function getFilePathForUrl(
     url: string,
     context: vscode.ExtensionContext,
+    hash: boolean = true,
 ) {
     const uri = vscode.Uri.parse(url);
     url = uri.toString();
     const base = path.basename(url);
-    const hash = cyrb53(url, 4);
-    return vscode.Uri.joinPath(context.globalStorageUri, `${hash}_${base}`);
+    const cyrb = cyrb53(url, 4) + "_";
+    return vscode.Uri.joinPath(
+        context.globalStorageUri,
+        `${hash ? cyrb : ""}${base}`,
+    );
 }
 
 export type DownloadResult = {
@@ -199,7 +201,7 @@ export class DefsDownloader {
     async downloadSelene(force: boolean): Promise<string[]> {
         this.output.appendLine("Downloading Selene...");
         const selene = getConfig<string>(Config.SeleneDocs) || "";
-        const toml = getConfig<string>(Config.SeleneDocs) || "";
+        const toml = getConfig<string>(Config.SeleneToml) || "";
         return (await Promise.all(
             [selene, toml].map((d) => this.downloadFile(d, force)),
         )).filter((u) => u != null);
