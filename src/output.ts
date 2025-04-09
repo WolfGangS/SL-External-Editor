@@ -12,9 +12,9 @@ export class Output implements vscode.Disposable {
     private disposed: boolean = false;
     constructor(name: string) {
         this.output = vscode.window.createOutputChannel(name);
-        // if (vscode.debug.activeDebugSession) {
-        this.output.show();
-        // }
+        if (process.env.VSCODE_DEBUG_MODE === "true") {
+            this.output.show();
+        }
     }
 
     getHandle(prefix: string): OutputHandle {
