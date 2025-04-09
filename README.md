@@ -179,6 +179,14 @@ This extension has the following settings:
 
 ## Release Notes
 
+### 0.3
+
+- `0.3.0` Error watcher for new .log file the viewer produces, a little
+  pointless at the moment if you have the lsp setup
+  - A fix for preproc being configured in workspace config, should now set in
+    global, avoids leaking username and conflicting in shared projects that
+    choose to commit .vscode directory
+
 ### 0.2
 
 - `0.2.6` Better file watcher, and linking log files
