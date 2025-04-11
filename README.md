@@ -9,7 +9,7 @@ Second Life
 any use of trademarks or copyrighted terms is done in good faith to explain
 clearly what this project is for, and not an attempt to misrepresent</sub>
 
-### [Get it here](https://marketplace.visualstudio.com/items?itemName=wlf-io.sl-external-editor)
+### [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=wlf-io.sl-external-editor) - - - [Open VSX Marketplace](https://open-vsx.org/extension/wlf-io/sl-external-editor)
 
 ## Setup
 
