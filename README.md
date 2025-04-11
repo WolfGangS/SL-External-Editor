@@ -181,6 +181,7 @@ This extension has the following settings:
 
 ### 0.3
 
+- `0.3.4` Stop error processing if no errors
 - `0.3.3` Disable debug features in release extension
 - `0.3.2` Actually bump the version.... dingus
 - `0.3.1` Preproc version bump for bug with line counts

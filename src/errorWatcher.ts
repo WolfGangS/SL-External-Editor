@@ -52,6 +52,7 @@ export class ErrorWatcher implements vscode.Disposable {
                 ]);
             }
         }
+        if (errors.length < 1) return;
         if (isPreProcConfigured(log.codeFile.rootFile)) {
             await this.displayMappedErrors(log.codeFile, errors);
         } else {
