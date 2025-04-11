@@ -335,6 +335,8 @@ export class TempWatcher implements vscode.Disposable {
         filePath: string,
         relativePath: string,
     ): boolean {
+        filePath = filePath.toLowerCase();
+        relativePath = relativePath.toLowerCase();
         const fileExt = filePath.split(".").pop() || "";
         const exts = getFileExtensions();
 
@@ -383,7 +385,9 @@ export class TempWatcher implements vscode.Disposable {
         if (projectHint) {
             this.output.append(`CHECK: Project hint '${projectHint}' ...`);
             if (!filePath.includes(projectHint)) {
-                this.output.appendLine("FAIL, not project");
+                this.output.appendLine(
+                    `FAIL, not project \n${filePath}\n${projectHint}`,
+                );
                 return false;
             }
             relativePath = filePath.split(projectHint).pop() || "";

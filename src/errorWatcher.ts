@@ -26,12 +26,15 @@ export class ErrorWatcher implements vscode.Disposable {
     }
 
     private async change(log: WatchedFile) {
+        this.output.appendLine("CHANGE");
         if (!log.codeFile) {
             return;
         }
+        this.output.appendLine("CODE");
         if (!log.codeFile.rootFile) {
             return;
         }
+        this.output.appendLine("ROOT");
         const data = await vscode.workspace.fs.readFile(log.uri);
         const text = new TextDecoder().decode(data);
         const lines = text.split("\n");
@@ -64,18 +67,16 @@ export class ErrorWatcher implements vscode.Disposable {
         file: WatchedFile,
         errors: FileError[],
     ) {
-        this.output.appendLine("TODO: REMAP ERRORS");
         const wf = getWorkingFolder();
         if (!wf) {
             this.errorPopup(errors);
             return;
         }
         const cmd = getPreparedCMD(file.uri, file.language, wf) +
-            ` --remapLines "${errors.map((e) => e[0]).join(",")}"`;
+            ` --remapLines "${errors.map((e) => e[0][1]).join(",")}"`;
         this.output.appendLine(cmd);
         try {
             const response = await runCmd(cmd);
-            this.output.appendLine(response.stdout);
             const result = JSON.parse(response.stdout);
             if (result && result.success) {
                 const lineMap: { [k: string]: [string, number] } = result.lines;
@@ -84,7 +85,6 @@ export class ErrorWatcher implements vscode.Disposable {
                     if (!map) throw "Couldn't remap " + JSON.stringify(error);
                     error[0] = map;
                 }
-                console.log(errors);
                 this.errorPopup(errors);
                 return;
             }

@@ -18,10 +18,11 @@ async function testForFilesMatchingTemp(
     const files = await getFilesMatchingTempFileLanguage(tempFile.language);
     return files.filter((file) => {
         const relative = vscode.workspace.asRelativePath(file);
-        return TempWatcher.Get().silentFileNameMatchesWatchedFile(
+        return TempWatcher.Get().fileNameMatchesWatchedFile(
+            // return TempWatcher.Get().silentFileNameMatchesWatchedFile(
             tempFile,
             file.path,
-            file.path,
+            relative,
         );
     });
 }
