@@ -33,6 +33,11 @@ export function setupCommands(
             );
             await vscode.workspace.getConfiguration("secondLifeExternalEditor")
                 .update("enabled", true);
+            await vscode.workspace.getConfiguration("selene")
+                .update("warnRoblox", false);
+            await vscode.workspace.getConfiguration("luau-lsp")
+                .update("sourcemap.enabled", false);
+
             if (DefsDownloader.enabled()) {
                 await DefsDownloader.get().download();
                 await DefsDownloader.get().updateLuauLSPConfig();

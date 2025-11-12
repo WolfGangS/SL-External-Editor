@@ -281,10 +281,24 @@ export class DefsDownloader {
             dlDocs.push(vscode.workspace.asRelativePath(target));
         }
 
-        const defs = luauConfig.get<string[]>("types.definitionFiles") || [];
+        let defs =
+            luauConfig.get<{ [k: string]: string }>("types.definitionFiles") ||
+            {};
         const docs = luauConfig.get<string[]>("types.documentationFiles") || [];
 
-        luauConfig.update("types.definitionFiles", dlDefs);
+        if (defs instanceof Array) {
+            defs = {};
+        }
+        for (const key in defs) {
+            if (key.toLowerCase().startsWith("sl-ext-ed-")) {
+                delete defs[key];
+            }
+        }
+        for (const i in dlDefs) {
+            defs[`sl-ext-ed-${i + 1}`] = dlDefs[i];
+        }
+
+        luauConfig.update("types.definitionFiles", defs);
         luauConfig.update("types.documentationFiles", dlDocs);
 
         luauConfig.update("platform.type", "standard");
