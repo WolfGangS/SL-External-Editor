@@ -105,6 +105,8 @@ function getFileExtensions(): string[] {
 
 export function getTempDir(): vscode.Uri {
     if (temp_dir) return vscode.Uri.file(temp_dir);
+    const conf : string = (getConfig<string|null>(Config.SLTempDir) || "").trim();
+    if(conf != "") return vscode.Uri.file(conf);
     switch (os.platform()) {
         case "win32":
             return vscode.Uri.joinPath(

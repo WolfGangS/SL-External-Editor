@@ -236,10 +236,15 @@ async function tryFindDocInProjectAndOpen(
 async function getTempFileWithPause(
     uri: vscode.Uri,
 ): Promise<WatchedFile | null> {
-    const temp = TempWatcher.Get().getWatchedFileForFileUri(uri);
+    let temp = TempWatcher.Get().getWatchedFileForFileUri(uri);
     if (!temp) {
         await new Promise((res) => setTimeout(res, 1500));
-        return TempWatcher.Get().getWatchedFileForFileUri(uri);
+        temp = TempWatcher.Get().getWatchedFileForFileUri(uri);
+        if(!temp && uri.path.includes("sl_script")) {
+            TempWatcher.Get().stop();
+            TempWatcher.Get().start();
+            temp = TempWatcher.Get().getWatchedFileForFileUri(uri);
+        }
     }
     return temp;
 }

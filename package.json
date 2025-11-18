@@ -3,7 +3,7 @@
   "displayName": "SL External Editor",
   "publisher": "wlf-io",
   "description": "Integrate vs code with the Second Life client external editor feature",
-  "version": "0.3.6",
+  "version": "0.3.8",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WolfGangS/SL-External-Editor.git"
@@ -63,6 +63,12 @@
           "description": "The directory path the extension will use to look for projects to automatically open for",
           "type": "string",
           "default": "",
+          "scope": "machine"
+        },
+        "secondLifeExternalEditor.dir.slTempDir": {
+          "description": "The directory path the extension will watch for the temp files sl creates, probably dont need to configure this unless on linux using flatpaks or so",
+          "type": "string",
+          "default": null,
           "scope": "machine"
         },
         "secondLifeExternalEditor.hints.prefix": {

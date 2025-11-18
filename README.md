@@ -181,6 +181,7 @@ This extension has the following settings:
 
 ### 0.3
 
+- `0.3.7` Add config for temp directory
 - `0.3.6` Update for luau-lsp compatability
 - `0.3.5` Bugfix filepath name check too strict
 - `0.3.4` Stop error processing if no errors

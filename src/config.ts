@@ -20,6 +20,7 @@ export enum Config {
     SeleneDocs = "secondLifeExternalEditor.selene.download",
     SeleneToml = "secondLifeExternalEditor.selene.downloadToml",
     AutoCloseTemp = "secondLifeExternalEditor.matcher.autoCloseTempScript",
+    SLTempDir = "secondLifeExternalEditor.dir.slTempDir",
 }
 
 export enum DownloadLocation {
@@ -60,6 +61,7 @@ export class ConfigWatcher implements vscode.Disposable {
         [Config.AutoCloseTemp]: {},
         [Config.DownloadSnippets]: {},
         [Config.SeleneToml]: {},
+        [Config.SLTempDir]: {}
     };
     private output: OutputHandle;
 
